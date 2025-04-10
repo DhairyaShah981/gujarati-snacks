@@ -4,6 +4,8 @@ import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { useAuth } from '../context/AuthContext';
 import { addToCart, addToFavorites, removeFromFavorites } from '../services/api';
+import { toast } from 'react-hot-toast';
+import config from '../config';
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
@@ -13,17 +15,17 @@ const ProductCard = ({ product }) => {
 
   const handleAddToCart = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      toast.error('Please login to add items to cart');
       return;
     }
 
     try {
       setIsAddingToCart(true);
       await addToCart(product._id, 1);
-      // Show success toast
+      toast.success('Added to cart!');
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // Show error toast
+      toast.error(error.response?.data?.message || 'Failed to add to cart');
     } finally {
       setIsAddingToCart(false);
     }
@@ -52,6 +54,15 @@ const ProductCard = ({ product }) => {
     }
   };
 
+  // Get the correct image path based on environment
+  const getImagePath = (imagePath) => {
+    if (!imagePath) return '/images/products/placeholder.jpg';
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    // For local images, prepend the base URL in production
+    return import.meta.env.PROD ? `${config.baseUrl}${imagePath}` : imagePath;
+  };
+
   return (
     <div className="group relative bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Favorite Button */}
@@ -69,11 +80,17 @@ const ProductCard = ({ product }) => {
 
       {/* Product Image */}
       <Link to={`/products/${product._id}`} className="block aspect-w-1 aspect-h-1">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-        />
+        <div className="relative pb-[100%]">
+          <img
+            src={getImagePath(product.image)}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/images/products/placeholder.jpg';
+            }}
+          />
+        </div>
       </Link>
 
       {/* Product Info */}
