@@ -1,7 +1,7 @@
 {
   "name": "gujarati-snacks",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "homepage": "https://dhairyashah981.github.io/gujarati-snacks",
   "type": "module",
   "scripts": {
