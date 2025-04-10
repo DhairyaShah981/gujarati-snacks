@@ -56,11 +56,11 @@ const ProductCard = ({ product }) => {
 
   // Get the correct image path based on environment
   const getImagePath = (imagePath) => {
-    if (!imagePath) return '/images/products/placeholder.jpg';
+    if (!imagePath) return `${config.baseUrl}/images/products/placeholder.jpg`;
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http')) return imagePath;
     // For local images, prepend the base URL in production
-    return import.meta.env.PROD ? `${config.baseUrl}${imagePath}` : imagePath;
+    return `${config.baseUrl}${imagePath}`;
   };
 
   return (
@@ -87,7 +87,7 @@ const ProductCard = ({ product }) => {
             className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = '/images/products/placeholder.jpg';
+              e.target.src = `${config.baseUrl}/images/products/placeholder.jpg`;
             }}
           />
         </div>

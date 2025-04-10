@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { getCart, updateCartItem, removeFromCart } from '../services/api';
+import config from '../config';
 
 const Cart = () => {
   const [cart, setCart] = useState({ items: [], total: 0 });
@@ -79,6 +80,12 @@ const Cart = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getImagePath = (imagePath) => {
+    if (!imagePath) return `${config.baseUrl}/images/products/placeholder.jpg`;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${config.baseUrl}${imagePath}`;
   };
 
   if (!user) {
@@ -163,9 +170,13 @@ const Cart = () => {
                 <div className="flex items-center">
                   <div className="flex-shrink-0 w-24 h-24">
                     <img
-                      src={item.product.image}
+                      src={getImagePath(item.product.image)}
                       alt={item.product.name}
-                      className="w-full h-full object-cover rounded-md"
+                      className="w-24 h-24 object-cover rounded"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `${config.baseUrl}/images/products/placeholder.jpg`;
+                      }}
                     />
                   </div>
                   <div className="ml-6 flex-1">

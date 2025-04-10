@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getOrders } from '../services/api';
 import { format } from 'date-fns';
+import config from '../config';
 
 const Orders = () => {
   const { user } = useAuth();
@@ -28,6 +29,12 @@ const Orders = () => {
       fetchOrders();
     }
   }, [user]);
+
+  const getImagePath = (imagePath) => {
+    if (!imagePath) return `${config.baseUrl}/images/products/placeholder.jpg`;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${config.baseUrl}${imagePath}`;
+  };
 
   if (!user) {
     return (
@@ -119,9 +126,13 @@ const Orders = () => {
                           <li key={item._id} className="py-4 flex">
                             <div className="flex-shrink-0 w-16 h-16">
                               <img
-                                src={item.product.image}
+                                src={getImagePath(item.product.image)}
                                 alt={item.product.name}
-                                className="w-full h-full object-cover rounded-md"
+                                className="w-24 h-24 object-cover rounded"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = `${config.baseUrl}/images/products/placeholder.jpg`;
+                                }}
                               />
                             </div>
                             <div className="ml-4 flex-1 flex flex-col">

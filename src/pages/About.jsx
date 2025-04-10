@@ -5,9 +5,9 @@ import config from '../config';
 
 const About = () => {
   const getImagePath = (imagePath) => {
-    if (!imagePath) return '/images/team/placeholder.jpg';
+    if (!imagePath) return `${config.baseUrl}/images/team/placeholder.jpg`;
     if (imagePath.startsWith('http')) return imagePath;
-    return import.meta.env.PROD ? `${config.baseUrl}${imagePath}` : imagePath;
+    return `${config.baseUrl}${imagePath}`;
   };
 
   return (
@@ -43,7 +43,7 @@ const About = () => {
                   className="w-full h-full object-cover rounded-lg shadow-lg"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/images/team/placeholder.jpg';
+                    e.target.src = `${config.baseUrl}/images/team/placeholder.jpg`;
                   }}
                 />
               </div>
