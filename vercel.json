@@ -49,6 +49,15 @@
           "value": "application/javascript"
         }
       ]
+    },
+    {
+      "source": "/assets/(.*).js.map",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 } 
