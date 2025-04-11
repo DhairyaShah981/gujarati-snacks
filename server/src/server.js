@@ -15,17 +15,6 @@ dotenv.config();
 
 const app = express();
 
-// Connect to MongoDB
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_ATLAS_URI || process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
-  }
-};
-
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
@@ -98,15 +87,27 @@ app.get('/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something broke!', error: err.message });
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
 // Start the server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 10000;
 
 // Connect to MongoDB and start the server
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
-}); 
+});
+
+// MongoDB Connection
+const connectDB = async () => {
+  try {
+    const mongoOptions = JSON.parse(process.env.MONGODB_OPTIONS || '{}');
+    await mongoose.connect(process.env.MONGODB_ATLAS_URI, mongoOptions);
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+}; 
