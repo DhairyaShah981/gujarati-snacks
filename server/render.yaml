@@ -2,8 +2,9 @@ services:
   - type: web
     name: gujarati-snacks-api
     env: node
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    rootDirectory: server
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,4 +19,12 @@ services:
       - key: CLIENT_URL
         value: https://gujarati-snacks.vercel.app
       - key: REFRESH_TOKEN_SECRET
-        sync: false 
+        sync: false
+      - key: EMAILJS_PUBLIC_KEY
+        value: PetqFRmfT0ag19QmD
+      - key: EMAILJS_TEMPLATE_ID
+        value: template_tr8ak6u
+      - key: EMAILJS_SERVICE_ID
+        value: service_rp0782i
+      - key: ADMIN_EMAIL
+        value: dhairyarup@gmail.com 
