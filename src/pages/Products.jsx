@@ -33,6 +33,14 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      console.log('Fetching products with params:', {
+        page: currentPage,
+        limit: 12,
+        category: selectedCategory,
+        sort: sortBy,
+        search: searchQuery,
+      });
+      
       const response = await getProducts({
         page: currentPage,
         limit: 12,
@@ -40,8 +48,16 @@ const Products = () => {
         sort: sortBy,
         search: searchQuery,
       });
-      setProducts(response.data.products || []);
-      setTotalPages(response.data.totalPages || 1);
+      
+      console.log('Products API response:', response.data);
+      
+      if (response.data && response.data.products) {
+        setProducts(response.data.products);
+        setTotalPages(response.data.totalPages || 1);
+      } else {
+        console.error('Invalid response format:', response.data);
+        setProducts([]);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);

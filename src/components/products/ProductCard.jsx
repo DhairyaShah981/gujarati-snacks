@@ -110,34 +110,27 @@ const ProductCard = ({ product, onFavoriteChange }) => {
   };
 
   return (
-    <div className="group relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <Link to={`/product/${product._id}`} className="block">
-        <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-lg">
+        <div className="relative h-48 overflow-hidden">
           <img
             src={product.image}
             alt={product.name}
-            className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error(`Error loading image for ${product.name}:`, e);
+              e.target.src = '/gujarati-snacks/images/Logo/logo.png'; // Fallback image
+            }}
           />
-        </div>
-      </Link>
-      <div className="p-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900">
-              <Link to={`/product/${product._id}`} className="hover:text-orange-600 transition-colors duration-200">
-                {product.name}
-              </Link>
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">{product.category}</p>
-          </div>
-          <div className="flex space-x-2">
+          <div className="absolute top-2 right-2">
             <button
-              onClick={handleToggleFavorite}
-              disabled={isLoading}
+              onClick={(e) => handleToggleFavorite(e)}
               className={`p-2 rounded-full ${
-                isFavorite ? 'text-red-500' : 'text-gray-400'
-              } hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200`}
-              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                isFavorite
+                  ? 'bg-red-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              disabled={isLoading}
             >
               {isFavorite ? (
                 <HeartIconSolid className="h-5 w-5" />
@@ -145,23 +138,24 @@ const ProductCard = ({ product, onFavoriteChange }) => {
                 <HeartIcon className="h-5 w-5" />
               )}
             </button>
+          </div>
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{product.name}</h3>
+          <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold text-orange-600">₹{product.price}</span>
             <button
-              onClick={handleAddToCart}
+              onClick={(e) => handleAddToCart(e)}
+              className="flex items-center text-orange-600 hover:text-orange-700"
               disabled={isLoading}
-              className="p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              aria-label="Add to cart"
             >
-              <ShoppingCartIcon className="h-5 w-5" />
+              <ShoppingCartIcon className="h-5 w-5 mr-1" />
+              Add to Cart
             </button>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <p className="text-lg font-medium text-gray-900">₹{product.price}</p>
-          {error && (
-            <p className="mt-2 text-sm text-red-600">{error}</p>
-          )}
-        </div>
-      </div>
+      </Link>
     </div>
   );
 };

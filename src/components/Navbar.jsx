@@ -26,7 +26,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="/images/Logo/logo.png" 
+                src="/gujarati-snacks/images/Logo/logo.png" 
                 alt="Jigkrupa Farsan Logo" 
                 className="h-16 w-auto mr-3"
               />
@@ -117,7 +117,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white hover:text-orange-100 p-2 rounded-md"
+              className="text-gray-700 hover:text-orange-600 p-2 rounded-md"
             >
               {isMenuOpen ? (
                 <XMarkIcon className="h-6 w-6" />
@@ -149,24 +149,39 @@ const Navbar = () => {
               <>
                 <Link
                   to="/favorites"
-                  className="block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium hover:bg-orange-500"
+                  className={`block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium ${
+                    isActive('/favorites') ? 'bg-orange-700' : 'hover:bg-orange-500'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Favorites
                 </Link>
                 <Link
                   to="/cart"
-                  className="block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium hover:bg-orange-500"
+                  className={`block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium ${
+                    isActive('/cart') ? 'bg-orange-700' : 'hover:bg-orange-500'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Cart
                 </Link>
                 <Link
                   to="/profile"
-                  className="block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium hover:bg-orange-500"
+                  className={`block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium ${
+                    isActive('/profile') ? 'bg-orange-700' : 'hover:bg-orange-500'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Profile
+                </Link>
+                <Link
+                  to="/orders"
+                  className={`block text-white hover:text-orange-100 px-3 py-2 rounded-md text-base font-medium ${
+                    isActive('/orders') ? 'bg-orange-700' : 'hover:bg-orange-500'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Orders
                 </Link>
                 <button
                   onClick={() => {

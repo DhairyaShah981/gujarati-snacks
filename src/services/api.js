@@ -17,6 +17,8 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', error.response?.status, error.response?.data || error.message);
+    
     // Only redirect to login if it's a 401 error and we're not already on the login page
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       sessionStorage.setItem('redirectPath', window.location.pathname);
