@@ -109,6 +109,10 @@ const ProductCard = ({ product, onFavoriteChange }) => {
     }
   };
 
+  const handleImageError = (e) => {
+    e.target.src = '/images/placeholder.jpg';
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <Link to={`/product/${product._id}`} className="block">
@@ -117,10 +121,7 @@ const ProductCard = ({ product, onFavoriteChange }) => {
             src={product.image}
             alt={product.name}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error(`Error loading image for ${product.name}:`, e);
-              e.target.src = '/gujarati-snacks/images/Logo/logo.png'; // Fallback image
-            }}
+            onError={handleImageError}
           />
           <div className="absolute top-2 right-2">
             <button
