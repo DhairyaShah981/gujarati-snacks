@@ -13,10 +13,10 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: 'Home', path: '/gujarati-snacks' },
-    { name: 'Products', path: '/gujarati-snacks/products' },
-    { name: 'About', path: '/gujarati-snacks/about' },
-    { name: 'Contact', path: '/gujarati-snacks/contact' },
+    { name: 'Home', path: '/' },
+    { name: 'Products', path: '/products' },
+    { name: 'About', path: '/about' },
+    { name: 'Contact', path: '/contact' },
   ];
 
   return (
