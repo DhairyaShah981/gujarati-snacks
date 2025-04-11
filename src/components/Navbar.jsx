@@ -26,7 +26,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="/gujarati-snacks/images/Logo/logo.png" 
+                src="/images/Logo/logo.png" 
                 alt="Jigkrupa Farsan Logo" 
                 className="h-16 w-auto mr-3"
               />

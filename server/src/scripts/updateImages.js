@@ -21,8 +21,8 @@ const updateImages = async () => {
         .replace(/ /g, '-')
         + '.jpeg';
       
-      // Update image path with GitHub Pages URL structure
-      const imagePath = `/gujarati-snacks/images/products/${filename}`;
+      // Update image path for Vercel deployment
+      const imagePath = `/images/products/${filename}`;
       await Product.findByIdAndUpdate(product._id, { image: imagePath });
       console.log(`Updated image path for ${product.name} to ${imagePath}`);
     }

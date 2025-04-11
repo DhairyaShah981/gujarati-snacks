@@ -18,7 +18,7 @@ import Orders from './pages/Orders';
 function App() {
   return (
     <AuthProvider>
-      <Router basename="/gujarati-snacks">
+      <Router>
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow">
