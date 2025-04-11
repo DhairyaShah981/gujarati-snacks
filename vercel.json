@@ -19,17 +19,33 @@
       "continue": true
     },
     {
+      "src": "/(.*)\\.js",
+      "headers": {
+        "Content-Type": "application/javascript"
+      },
+      "continue": true
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(.*).js",
+      "source": "/(.*)\\.js",
       "headers": [
         {
           "key": "Content-Type",
           "value": "application/javascript"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.css",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css"
         }
       ]
     }
