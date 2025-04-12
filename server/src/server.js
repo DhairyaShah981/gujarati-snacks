@@ -1,29 +1,22 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import csrf from 'csurf';
-import authRoutes from './routes/authRoutes.js';
-import addressRoutes from './routes/addressRoutes.js';
-import productRoutes from './routes/productRoutes.js';
-import cartRoutes from './routes/cartRoutes.js';
-import favoriteRoutes from './routes/favoriteRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import authRoutes from './routes/auth.js';
+import productRoutes from './routes/products.js';
+import cartRoutes from './routes/cart.js';
+import orderRoutes from './routes/orders.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
+// Load environment variables
 dotenv.config();
 
-// MongoDB Connection
-const connectDB = async () => {
-  try {
-    const mongoOptions = JSON.parse(process.env.MONGODB_OPTIONS || '{}');
-    await mongoose.connect(process.env.MONGODB_ATLAS_URI, mongoOptions);
-    console.log('MongoDB connected successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
-  }
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -33,32 +26,31 @@ app.use(cookieParser());
 
 // CORS configuration
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
   'https://gujarati-snacks.vercel.app',
+  'http://localhost:5173',
   'http://localhost:3000'
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('CORS blocked origin:', origin);
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-XSRF-TOKEN'],
-  exposedHeaders: ['X-CSRF-Token', 'X-XSRF-TOKEN']
-}));
+  exposedHeaders: ['X-CSRF-Token']
+};
 
-// CSRF protection
-const csrfProtection = csrf({ 
-  cookie: { 
+app.use(cors(corsOptions));
+
+// Initialize CSRF protection
+const csrfProtection = csrf({
+  cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
@@ -66,61 +58,58 @@ const csrfProtection = csrf({
   }
 });
 
+// Apply CSRF protection to all routes except health check
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
+
 // Add CSRF token to response headers
 app.use((req, res, next) => {
-  const token = req.csrfToken();
-  res.cookie('XSRF-TOKEN', token, {
+  if (req.path === '/health') {
+    return next();
+  }
+  res.cookie('XSRF-TOKEN', req.csrfToken(), {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
     path: '/'
   });
-  res.header('X-CSRF-Token', token);
   next();
 });
-
-// Apply CSRF protection to all routes except health check
-app.use((req, res, next) => {
-  if (req.path === '/health') {
-    next();
-  } else {
-    csrfProtection(req, res, next);
-  }
-});
-
-// CSRF error handler
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    console.error('CSRF Token Error:', err);
-    res.status(403).json({ message: 'Invalid CSRF token' });
-  } else {
-    next(err);
-  }
-});
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/favorites', favoriteRoutes);
-app.use('/api/orders', orderRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
-// Start the server
-const PORT = process.env.PORT || 10000;
+// MongoDB connection
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_ATLAS_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
 
-// Connect to MongoDB and start the server
+// Start server
+const PORT = process.env.PORT || 5001;
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
