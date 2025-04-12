@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "update-products": "node updateProducts.js"
+    "update-products": "node updateProducts.js",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
