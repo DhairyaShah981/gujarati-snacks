@@ -44,6 +44,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('CORS blocked origin:', origin);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
@@ -51,32 +52,46 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  exposedHeaders: ['X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-XSRF-TOKEN'],
+  exposedHeaders: ['X-CSRF-Token', 'X-XSRF-TOKEN']
 }));
 
 // CSRF protection
-app.use(csrf({ 
+const csrfProtection = csrf({ 
   cookie: { 
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    sameSite: 'none',
+    path: '/'
   }
-}));
+});
 
 // Add CSRF token to response headers
 app.use((req, res, next) => {
-  res.cookie('XSRF-TOKEN', req.csrfToken(), {
+  const token = req.csrfToken();
+  res.cookie('XSRF-TOKEN', token, {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    sameSite: 'none',
+    path: '/'
   });
+  res.header('X-CSRF-Token', token);
   next();
+});
+
+// Apply CSRF protection to all routes except health check
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    next();
+  } else {
+    csrfProtection(req, res, next);
+  }
 });
 
 // CSRF error handler
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
+    console.error('CSRF Token Error:', err);
     res.status(403).json({ message: 'Invalid CSRF token' });
   } else {
     next(err);
@@ -98,7 +113,7 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 

@@ -16,38 +16,125 @@ const api = axios.create({
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     console.error('API Error:', error.response?.status, error.response?.data || error.message);
     
-    // Only redirect to login if it's a 401 error and we're not already on the login page
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
-      sessionStorage.setItem('redirectPath', window.location.pathname);
-      window.location.href = '/login';
+    // Handle 401 errors only for protected routes
+    if (error.response?.status === 401) {
+      const protectedRoutes = ['/cart', '/favorites', '/profile', '/orders'];
+      const isProtectedRoute = protectedRoutes.some(route => 
+        error.config.url.includes(route)
+      );
+      
+      if (isProtectedRoute && !window.location.pathname.includes('/login')) {
+        try {
+          await refreshToken();
+          // Retry the original request
+          const config = error.config;
+          config._retry = true;
+          return api(config);
+        } catch (refreshError) {
+          // If refresh fails, redirect to login
+          sessionStorage.setItem('redirectPath', window.location.pathname);
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// Add request interceptor for CSRF token
-api.interceptors.request.use((config) => {
-  const csrfToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('XSRF-TOKEN='))
-    ?.split('=')[1];
+// Add request interceptor for tokens
+api.interceptors.request.use(async (config) => {
+  try {
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
 
-  if (csrfToken) {
-    config.headers['X-CSRF-Token'] = decodeURIComponent(csrfToken);
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = decodeURIComponent(csrfToken);
+    }
+
+    // Get access token from cookie
+    const accessToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('accessToken='))
+      ?.split('=')[1];
+
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+  } catch (error) {
+    console.error('Error setting auth headers:', error);
   }
   return config;
 });
 
 // Auth APIs
-export const login = (credentials) => api.post('/auth/login', credentials);
-export const signup = (userData) => api.post('/auth/signup', userData);
-export const logout = () => api.post('/auth/logout');
-export const refreshToken = () => api.post('/auth/refresh-token');
-export const getProfile = () => api.get('/auth/profile');
-export const updateProfile = (userData) => api.put('/auth/profile', userData);
+export const login = async (credentials) => {
+  try {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+};
+
+export const signup = async (userData) => {
+  try {
+    // First, get a CSRF token
+    await api.get('/health');
+    
+    // Then make the signup request
+    const response = await api.post('/auth/signup', userData);
+    return response.data;
+  } catch (error) {
+    console.error('Signup error:', error);
+    throw error;
+  }
+};
+
+export const logout = async () => {
+  try {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
+  }
+};
+
+export const refreshToken = async () => {
+  try {
+    const response = await api.post('/auth/refresh-token');
+    return response.data;
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    throw error;
+  }
+};
+
+export const getProfile = async () => {
+  try {
+    const response = await api.get('/auth/profile');
+    if (!response.data) {
+      throw new Error('No user data received');
+    }
+    return response.data.user || response.data;
+  } catch (error) {
+    console.error('Get profile error:', error);
+    if (error.response?.status === 401) {
+      // Clear any existing user data
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+      throw new Error('Session expired. Please login again.');
+    }
+    throw error;
+  }
+};
 
 // Product APIs
 export const getProducts = (params = {}) => {
@@ -93,5 +180,7 @@ export const setDefaultAddress = (id) => api.put(`/addresses/${id}/default`);
 export const createOrder = (orderData) => api.post('/orders', orderData);
 export const getOrders = () => api.get('/orders/myorders');
 export const getOrder = (id) => api.get(`/orders/${id}`);
+
+export const updateProfile = (userData) => api.put('/auth/profile', userData);
 
 export default api; 
