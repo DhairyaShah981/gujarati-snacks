@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "build": "echo 'No build step required'",
-    "seed": "node src/utils/seedData.js"
+    "update-products": "node updateProducts.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,8 +16,10 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.3"
+    "mongoose": "^7.0.3",
+    "nodemailer": "^6.9.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
