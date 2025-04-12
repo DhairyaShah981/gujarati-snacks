@@ -6,10 +6,10 @@ import csrf from 'csurf';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoutes from './routes/auth.js';
-import productRoutes from './routes/products.js';
-import cartRoutes from './routes/cart.js';
-import orderRoutes from './routes/orders.js';
+import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
