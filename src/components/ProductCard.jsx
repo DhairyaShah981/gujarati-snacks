@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HeartIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { HeartIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { addToCart, addToFavorites, removeFromFavorites } from '../services/api';
 import { toast } from 'react-hot-toast';
@@ -9,9 +8,17 @@ import config from '../config';
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(product.isFavorite || false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isAddingToFavorites, setIsAddingToFavorites] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const getImagePath = (imagePath, size = 'medium') => {
+    if (!imagePath) return `${config.baseUrl}/images/products/placeholder.jpg`;
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Extract the base name without extension
+    const baseName = imagePath.replace(/\.[^/.]+$/, '');
+    return `${config.baseUrl}/images/products/optimized/${baseName}-${size}.webp`;
+  };
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -20,95 +27,87 @@ const ProductCard = ({ product }) => {
     }
 
     try {
-      setIsAddingToCart(true);
       await addToCart(product._id, 1);
-      toast.success('Added to cart!');
+      toast.success('Added to cart');
     } catch (error) {
-      console.error('Error adding to cart:', error);
       toast.error(error.response?.data?.message || 'Failed to add to cart');
-    } finally {
-      setIsAddingToCart(false);
     }
   };
 
-  const handleToggleFavorite = async () => {
+  const handleFavorite = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      toast.error('Please login to add to favorites');
       return;
     }
 
     try {
-      setIsAddingToFavorites(true);
       if (isFavorite) {
         await removeFromFavorites(product._id);
+        setIsFavorite(false);
+        toast.success('Removed from favorites');
       } else {
         await addToFavorites(product._id);
+        setIsFavorite(true);
+        toast.success('Added to favorites');
       }
-      setIsFavorite(!isFavorite);
-      // Show success toast
     } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Show error toast
-    } finally {
-      setIsAddingToFavorites(false);
+      toast.error(error.response?.data?.message || 'Failed to update favorites');
     }
   };
 
-  // Get the correct image path based on environment
-  const getImagePath = (imagePath) => {
-    if (!imagePath) return `${config.baseUrl}/images/products/placeholder.jpg`;
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith('http')) return imagePath;
-    // For local images, prepend the base URL in production
-    return `${config.baseUrl}${imagePath}`;
-  };
-
   return (
-    <div className="group relative bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
-      {/* Favorite Button */}
-      <button
-        onClick={handleToggleFavorite}
-        disabled={isAddingToFavorites}
-        className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-      >
-        {isFavorite ? (
-          <HeartIconSolid className="h-5 w-5 text-red-500" />
-        ) : (
-          <HeartIcon className="h-5 w-5 text-gray-600 hover:text-red-500" />
-        )}
-      </button>
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <div className="relative aspect-w-1 aspect-h-1">
+        <Link to={`/product/${product._id}`}>
+          <div className="relative w-full h-48 overflow-hidden">
+            <img
+              src={getImagePath(product.image, 'small')}
+              srcSet={`
+                ${getImagePath(product.image, 'small')} 300w,
+                ${getImagePath(product.image, 'medium')} 600w,
+                ${getImagePath(product.image, 'large')} 1200w
+              `}
+              sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, 1200px"
+              alt={product.name}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              loading="lazy"
+              onLoad={() => setIsLoading(false)}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `${config.baseUrl}/images/products/placeholder.jpg`;
+              }}
+            />
+            {isLoading && (
+              <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+            )}
+          </div>
+        </Link>
+        <button
+          onClick={handleFavorite}
+          className={`absolute top-2 right-2 p-2 rounded-full ${
+            isFavorite ? 'bg-red-500 text-white' : 'bg-white text-gray-600'
+          } shadow-md hover:shadow-lg transition-all duration-300`}
+        >
+          <HeartIcon className="w-5 h-5" />
+        </button>
+      </div>
 
-      {/* Product Image */}
-      <Link to={`/products/${product._id}`} className="block aspect-w-1 aspect-h-1">
-        <div className="relative pb-[100%]">
-          <img
-            src={getImagePath(product.image)}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = `${config.baseUrl}/images/products/placeholder.jpg`;
-            }}
-          />
-        </div>
-      </Link>
-
-      {/* Product Info */}
       <div className="p-4">
-        <Link to={`/products/${product._id}`} className="block">
-          <h3 className="text-lg font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
+        <Link to={`/product/${product._id}`}>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1 hover:text-orange-600 transition-colors">
             {product.name}
           </h3>
         </Link>
-        <p className="mt-1 text-sm text-gray-500">{product.category}</p>
-        <div className="mt-2 flex items-center justify-between">
-          <p className="text-lg font-medium text-gray-900">₹{product.price}</p>
+        <p className="text-gray-600 text-sm mb-2 line-clamp-2">{product.description}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-orange-600">₹{product.price}</span>
           <button
             onClick={handleAddToCart}
-            disabled={isAddingToCart}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 transition-colors"
           >
-            {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+            <ShoppingCartIcon className="w-5 h-5" />
           </button>
         </div>
       </div>
