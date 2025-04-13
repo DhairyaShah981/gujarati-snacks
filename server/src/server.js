@@ -37,7 +37,21 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Generate and set CSRF token
+// Health check endpoint (must be before CSRF middleware)
+app.get('/health', (req, res) => {
+  // Generate and set CSRF token
+  const csrfToken = Math.random().toString(36).substring(2);
+  res.cookie('XSRF-TOKEN', csrfToken, {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    path: '/',
+    httpOnly: true
+  });
+  res.setHeader('X-CSRF-Token', csrfToken);
+  res.status(200).json({ status: 'ok' });
+});
+
+// Generate and set CSRF token for other routes
 app.use((req, res, next) => {
   const csrfToken = Math.random().toString(36).substring(2);
   res.cookie('XSRF-TOKEN', csrfToken, {
@@ -62,18 +76,21 @@ const verifyCsrfToken = (req, res, next) => {
   next();
 };
 
-// Apply CSRF protection to all routes except health check
+// Apply CSRF protection to protected routes only
 app.use((req, res, next) => {
-  if (req.path === '/health') {
+  const publicRoutes = [
+    '/health',
+    '/api/products',
+    '/api/auth/signup',
+    '/api/auth/login',
+    '/api/auth/health'
+  ];
+
+  if (publicRoutes.some(route => req.path.startsWith(route))) {
     next();
   } else {
     verifyCsrfToken(req, res, next);
   }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
 });
 
 // Routes

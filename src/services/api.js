@@ -78,30 +78,41 @@ api.interceptors.request.use(
   }
 );
 
+// Get CSRF token
+const getCsrfToken = async () => {
+  try {
+    await api.get('/health');
+  } catch (error) {
+    console.error('Error getting CSRF token:', error);
+    throw error;
+  }
+};
+
 // Auth APIs
 export const login = async (credentials) => {
   try {
     // First, get a CSRF token
-    await api.get('/health');
+    await getCsrfToken();
     
     // Then make the login request
     const response = await api.post('/auth/login', credentials);
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    throw error.response?.data || { message: 'Login failed' };
   }
 };
 
 export const signup = async (userData) => {
   try {
     // First, get a CSRF token
-    await api.get('/health');
+    await getCsrfToken();
     
     // Then make the signup request
     const response = await api.post('/auth/signup', userData);
     return response.data;
   } catch (error) {
+    console.error('Signup error:', error);
     throw error.response?.data || { message: 'Signup failed' };
   }
 };
@@ -113,6 +124,7 @@ export const logout = async () => {
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   } catch (error) {
+    console.error('Logout error:', error);
     throw error.response?.data || { message: 'Logout failed' };
   }
 };
