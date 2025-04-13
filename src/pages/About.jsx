@@ -5,8 +5,12 @@ import config from '../config';
 
 const About = () => {
   const getImagePath = (imagePath) => {
-    if (!imagePath) return `${config.baseUrl}/images/team/placeholder.jpg`;
+    if (!imagePath) return 'https://github.com/DhairyaShah981/gujarati-snacks/tree/main/public/images/team/placeholder.jpg';
     if (imagePath.startsWith('http')) return imagePath;
+    // For GitHub images
+    if (imagePath.startsWith('/images/')) {
+      return `https://github.com/DhairyaShah981/gujarati-snacks/tree/main/public${imagePath}`;
+    }
     return `${config.baseUrl}${imagePath}`;
   };
 
@@ -22,28 +26,34 @@ const About = () => {
 
       <div className="bg-white">
         {/* Our Story Section */}
-        <section className="py-16">
+        <section className="py-12">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-gray-800 mb-8">Our Story</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">Our Story</h2>
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <p className="text-gray-600 mb-4">
                   Born from a passion for authentic Gujarati cuisine, our journey began with a simple mission: 
                   to make traditional Gujarati snacks accessible to everyone, everywhere.
                 </p>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-4">
                   What started as a small family business has grown into a trusted name in Gujarati snacks, 
                   while maintaining the same commitment to quality and authenticity that we began with.
+                </p>
+                <p className="text-gray-600">
+                  Our story is deeply rooted in the rich culinary traditions of Gujarat. Each recipe we create 
+                  is a celebration of our heritage, carefully crafted to bring you the authentic taste of Gujarat. 
+                  From the bustling streets of Ahmedabad to your home, we bring you the true essence of Gujarati 
+                  cuisine with every bite.
                 </p>
               </div>
               <div className="relative h-64 md:h-96">
                 <img
-                  src={getImagePath('/images/team/founder.jpeg')}
-                  alt="Our Founder"
+                  src={getImagePath('/images/team/gujarati-cuisine.jpg')}
+                  alt="Gujarati Cuisine"
                   className="w-full h-full object-cover rounded-lg shadow-lg"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `${config.baseUrl}/images/team/placeholder.jpg`;
+                    e.target.src = 'https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public/images/team/placeholder.jpg';
                   }}
                 />
               </div>
@@ -91,7 +101,7 @@ const About = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = `${config.baseUrl}/images/team/placeholder.jpg`;
+                      e.target.src = 'https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public/images/team/placeholder.jpg';
                     }}
                   />
                 </div>
