@@ -25,30 +25,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS configuration
-const allowedOrigins = [
-  'https://gujarati-snacks.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('Blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'https://gujarati-snacks.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-XSRF-TOKEN'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   exposedHeaders: ['X-CSRF-Token']
 };
 
 app.use(cors(corsOptions));
 
-// Initialize CSRF protection
+// CSRF protection
 const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
@@ -58,26 +48,31 @@ const csrfProtection = csrf({
   }
 });
 
-// Apply CSRF protection to all routes except health check
-app.use((req, res, next) => {
-  if (req.path === '/health') {
-    return next();
-  }
-  csrfProtection(req, res, next);
-});
-
 // Add CSRF token to response headers
 app.use((req, res, next) => {
-  if (req.path === '/health') {
-    return next();
-  }
   res.cookie('XSRF-TOKEN', req.csrfToken(), {
-    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
     path: '/'
   });
   next();
+});
+
+// Apply CSRF protection to all routes except health check
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    next();
+  } else {
+    csrfProtection(req, res, next);
+  }
+});
+
+// Error handler for CSRF token validation
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ message: 'Invalid CSRF token' });
+  }
+  next(err);
 });
 
 // Health check endpoint

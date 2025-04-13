@@ -45,8 +45,8 @@ api.interceptors.response.use(
 );
 
 // Add request interceptor for tokens
-api.interceptors.request.use(async (config) => {
-  try {
+api.interceptors.request.use(
+  async (config) => {
     // Get CSRF token from cookie
     const csrfToken = document.cookie
       .split('; ')
@@ -54,7 +54,7 @@ api.interceptors.request.use(async (config) => {
       ?.split('=')[1];
 
     if (csrfToken) {
-      config.headers['X-CSRF-Token'] = decodeURIComponent(csrfToken);
+      config.headers['X-CSRF-Token'] = csrfToken;
     }
 
     // Get access token from cookie
@@ -66,11 +66,13 @@ api.interceptors.request.use(async (config) => {
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-  } catch (error) {
-    console.error('Error setting auth headers:', error);
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Auth APIs
 export const login = async (credentials) => {
@@ -85,25 +87,21 @@ export const login = async (credentials) => {
 
 export const signup = async (userData) => {
   try {
-    // First, get a CSRF token
-    await api.get('/health');
-    
-    // Then make the signup request
     const response = await api.post('/auth/signup', userData);
     return response.data;
   } catch (error) {
-    console.error('Signup error:', error);
-    throw error;
+    throw error.response?.data || { message: 'Signup failed' };
   }
 };
 
 export const logout = async () => {
   try {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    await api.post('/auth/logout');
+    // Clear cookies
+    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   } catch (error) {
-    console.error('Logout error:', error);
-    throw error;
+    throw error.response?.data || { message: 'Logout failed' };
   }
 };
 
