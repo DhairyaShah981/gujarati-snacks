@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Middleware
+// Basic middleware
 app.use(express.json());
 app.use(cookieParser());
 
@@ -38,41 +38,38 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// CSRF protection
-const csrfProtection = csrf({
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
-    path: '/'
-  }
-});
-
-// Add CSRF token to response headers
+// Generate and set CSRF token
 app.use((req, res, next) => {
-  res.cookie('XSRF-TOKEN', req.csrfToken(), {
+  const csrfToken = Math.random().toString(36).substring(2);
+  res.cookie('XSRF-TOKEN', csrfToken, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
-    path: '/'
+    path: '/',
+    httpOnly: true
   });
+  res.setHeader('X-CSRF-Token', csrfToken);
   next();
 });
+
+// Verify CSRF token middleware
+const verifyCsrfToken = (req, res, next) => {
+  const csrfToken = req.headers['x-csrf-token'];
+  const cookieToken = req.cookies['XSRF-TOKEN'];
+
+  if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
+    return res.status(403).json({ message: 'Invalid CSRF token' });
+  }
+
+  next();
+};
 
 // Apply CSRF protection to all routes except health check
 app.use((req, res, next) => {
   if (req.path === '/health') {
     next();
   } else {
-    csrfProtection(req, res, next);
+    verifyCsrfToken(req, res, next);
   }
-});
-
-// Error handler for CSRF token validation
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).json({ message: 'Invalid CSRF token' });
-  }
-  next(err);
 });
 
 // Health check endpoint

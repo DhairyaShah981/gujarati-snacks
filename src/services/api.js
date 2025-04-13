@@ -19,25 +19,29 @@ api.interceptors.response.use(
   async (error) => {
     console.error('API Error:', error.response?.status, error.response?.data || error.message);
     
-    // Handle 401 errors only for protected routes
-    if (error.response?.status === 401) {
-      const protectedRoutes = ['/cart', '/favorites', '/profile', '/orders'];
-      const isProtectedRoute = protectedRoutes.some(route => 
-        error.config.url.includes(route)
-      );
-      
-      if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-        try {
-          await refreshToken();
-          // Retry the original request
-          const config = error.config;
-          config._retry = true;
-          return api(config);
-        } catch (refreshError) {
-          // If refresh fails, redirect to login
-          sessionStorage.setItem('redirectPath', window.location.pathname);
+    const originalRequest = error.config;
+
+    // Handle 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        const response = await api.post('/auth/refresh-token');
+        const { accessToken } = response.data;
+
+        // Update the access token in the cookie
+        document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none`;
+
+        // Retry the original request
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, redirect to login
+        if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
@@ -77,6 +81,10 @@ api.interceptors.request.use(
 // Auth APIs
 export const login = async (credentials) => {
   try {
+    // First, get a CSRF token
+    await api.get('/health');
+    
+    // Then make the login request
     const response = await api.post('/auth/login', credentials);
     return response.data;
   } catch (error) {
@@ -87,6 +95,10 @@ export const login = async (credentials) => {
 
 export const signup = async (userData) => {
   try {
+    // First, get a CSRF token
+    await api.get('/health');
+    
+    // Then make the signup request
     const response = await api.post('/auth/signup', userData);
     return response.data;
   } catch (error) {
@@ -102,16 +114,6 @@ export const logout = async () => {
     document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   } catch (error) {
     throw error.response?.data || { message: 'Logout failed' };
-  }
-};
-
-export const refreshToken = async () => {
-  try {
-    const response = await api.post('/auth/refresh-token');
-    return response.data;
-  } catch (error) {
-    console.error('Refresh token error:', error);
-    throw error;
   }
 };
 

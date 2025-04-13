@@ -2,12 +2,18 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '15m',
-  });
-  const refreshToken = jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: '7d',
-  });
+  const accessToken = jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+  
+  const refreshToken = jwt.sign(
+    { userId },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+
   return { accessToken, refreshToken };
 };
 
@@ -15,20 +21,20 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
 
 export const signup = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phoneNumber } = req.body;
+    const { name, email, password } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -37,32 +43,42 @@ export const signup = async (req, res) => {
     }
 
     // Create new user
-    const user = await User.create({
-      firstName,
-      lastName,
+    const user = new User({
+      name,
       email,
-      password,
-      phoneNumber,
+      password
     });
+
+    await user.save();
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
-    setTokenCookies(res, accessToken, refreshToken);
+
+    // Set cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.status(201).json({
+      message: 'User created successfully',
       user: {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        addresses: user.addresses,
-      },
+        name: user.name,
+        email: user.email
+      }
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ message: 'Error creating user', error: error.message });
+    res.status(500).json({ message: 'Error creating user' });
   }
 };
 
@@ -84,55 +100,84 @@ export const login = async (req, res) => {
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
-    setTokenCookies(res, accessToken, refreshToken);
+
+    // Set cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.json({
+      message: 'Login successful',
       user: {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        addresses: user.addresses,
-      },
+        name: user.name,
+        email: user.email
+      }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    res.status(500).json({ message: 'Error logging in' });
   }
 };
 
-export const logout = async (req, res) => {
-  try {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
-    res.json({ message: 'Logged out successfully' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ message: 'Error logging out', error: error.message });
-  }
+export const logout = (req, res) => {
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none'
+  });
+  
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none'
+  });
+
+  res.json({ message: 'Logged out successfully' });
 };
 
 export const refreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
+
     if (!refreshToken) {
-      return res.status(401).json({ message: 'Refresh token not found' });
+      return res.status(401).json({ message: 'No refresh token provided' });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const user = await User.findById(decoded.id);
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.userId);
+
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
-    setTokenCookies(res, accessToken, newRefreshToken);
+    // Generate new access token
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    // Set new access token cookie
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
 
     res.json({ message: 'Token refreshed successfully' });
   } catch (error) {
-    console.error('Refresh token error:', error);
     res.status(401).json({ message: 'Invalid refresh token' });
   }
 };
