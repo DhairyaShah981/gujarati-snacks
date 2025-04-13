@@ -30,7 +30,7 @@ const products = [
     name: "Masala Puri",
     description: "Crispy puris topped with spicy masala and chutneys.",
     price: 149,
-    category: "farsan",
+    category: "snacks",
     image: "/images/products/masala-puri.jpg",
     stock: 100,
     isAvailable: true
@@ -39,7 +39,7 @@ const products = [
     name: "Gujarati Thali",
     description: "Complete meal with dal, kadhi, sabzi, roti, and more.",
     price: 199,
-    category: "thali",
+    category: "snacks",
     image: "/images/products/gujarati-thali.jpg",
     stock: 30,
     isAvailable: true
@@ -66,7 +66,7 @@ const products = [
     name: "Gujarati Kadhi",
     description: "Yogurt-based curry with pakoras.",
     price: 79,
-    category: "curry",
+    category: "snacks",
     image: "/images/products/gujarati-kadhi.jpg",
     stock: 35,
     isAvailable: true
@@ -75,7 +75,7 @@ const products = [
     name: "Thepla",
     description: "Flatbread made with fenugreek leaves and spices.",
     price: 69,
-    category: "bread",
+    category: "snacks",
     image: "/images/products/thepla.jpg",
     stock: 60,
     isAvailable: true
@@ -84,7 +84,7 @@ const products = [
     name: "Gujarati Dal",
     description: "Traditional Gujarati style dal with jaggery and spices.",
     price: 59,
-    category: "curry",
+    category: "snacks",
     image: "/images/products/gujarati-dal.jpg",
     stock: 50,
     isAvailable: true
@@ -102,7 +102,7 @@ const products = [
     name: "Gujarati Khichdi",
     description: "Comfort food made with rice, lentils, and spices.",
     price: 89,
-    category: "main-course",
+    category: "snacks",
     image: "/images/products/gujarati-khichdi.jpg",
     stock: 40,
     isAvailable: true
@@ -111,7 +111,7 @@ const products = [
     name: "Gujarati Kadhi Pakora",
     description: "Crispy pakoras in yogurt-based curry.",
     price: 129,
-    category: "curry",
+    category: "snacks",
     image: "/images/products/gujarati-kadhi-pakora.jpg",
     stock: 30,
     isAvailable: true
@@ -120,7 +120,7 @@ const products = [
     name: "Gujarati Undhiyu",
     description: "Traditional mixed vegetable dish cooked in earthen pot.",
     price: 159,
-    category: "main-course",
+    category: "snacks",
     image: "/images/products/gujarati-undhiyu.jpg",
     stock: 25,
     isAvailable: true
@@ -161,24 +161,19 @@ const categories = [
     image: "/images/categories/farsan.jpg"
   },
   {
-    name: "thali",
-    description: "Complete meal combinations",
-    image: "/images/categories/thali.jpg"
+    name: "sweets",
+    description: "Traditional Gujarati sweets and desserts",
+    image: "/images/categories/sweets.jpg"
   },
   {
-    name: "curry",
-    description: "Gravy-based dishes",
-    image: "/images/categories/curry.jpg"
+    name: "snacks",
+    description: "Quick and delicious Gujarati snacks",
+    image: "/images/categories/snacks.jpg"
   },
   {
-    name: "bread",
-    description: "Traditional Gujarati breads",
-    image: "/images/categories/bread.jpg"
-  },
-  {
-    name: "main-course",
-    description: "Main course dishes",
-    image: "/images/categories/main-course.jpg"
+    name: "beverages",
+    description: "Traditional Gujarati drinks and beverages",
+    image: "/images/categories/beverages.jpg"
   }
 ];
 

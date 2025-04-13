@@ -12,11 +12,11 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
-    { id: '', name: 'All' },
+    { id: 'all', name: 'All' },
     { id: 'farsan', name: 'Farsan' },
     { id: 'sweets', name: 'Sweets' },
     { id: 'snacks', name: 'Snacks' },
-    { id: 'beverages', name: 'Beverages' },
+    { id: 'beverages', name: 'Beverages' }
   ];
 
   const sortOptions = [

@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ['snacks', 'sweets', 'savories', 'beverages'],
+      enum: ['farsan', 'sweets', 'snacks', 'beverages'],
     },
     isAvailable: {
       type: Boolean,
@@ -31,7 +31,7 @@ const productSchema = new mongoose.Schema(
     },
     stock: {
       type: Number,
-      required: true,
+      default: 100,
       min: 0,
     },
     rating: {

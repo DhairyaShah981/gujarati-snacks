@@ -22,11 +22,11 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['Desserts', 'Drinks', 'Main Course', 'Snacks']
+    enum: ['farsan', 'sweets', 'snacks', 'beverages']
   },
   stock: {
     type: Number,
-    required: true,
+    default: 100,
     min: 0
   },
   rating: {
