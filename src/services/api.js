@@ -67,6 +67,8 @@ api.interceptors.request.use(
     console.log('All cookies:', document.cookie);
 
     if (csrfToken) {
+      // Set both lowercase and uppercase versions of the header
+      config.headers['x-csrf-token'] = csrfToken;
       config.headers['X-CSRF-Token'] = csrfToken;
       console.log('Request interceptor - Updated headers with CSRF token:', config.headers);
     } else {
@@ -100,7 +102,8 @@ const getCsrfToken = async () => {
     // Log all response headers
     console.log('Health endpoint response headers:', response.headers);
     
-    const csrfToken = response.headers['x-csrf-token'];
+    // Try both lowercase and uppercase versions
+    const csrfToken = response.headers['x-csrf-token'] || response.headers['X-CSRF-Token'];
     console.log('Received CSRF token from server:', csrfToken);
     
     if (csrfToken) {

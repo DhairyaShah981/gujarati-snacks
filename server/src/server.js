@@ -72,14 +72,16 @@ app.use((req, res, next) => {
 
 // Verify CSRF token middleware
 const verifyCsrfToken = (req, res, next) => {
-  const csrfToken = req.headers['x-csrf-token'];
+  // Check both lowercase and uppercase versions of the header
+  const csrfToken = req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'];
   const cookieToken = req.cookies['XSRF-TOKEN'];
   
   console.log('CSRF Validation Debug:', {
     path: req.path,
     method: req.method,
     headers: {
-      'x-csrf-token': csrfToken,
+      'x-csrf-token': req.headers['x-csrf-token'],
+      'X-CSRF-Token': req.headers['X-CSRF-Token'],
       'all-headers': req.headers
     },
     cookies: {
