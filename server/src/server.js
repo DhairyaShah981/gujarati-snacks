@@ -39,26 +39,17 @@ app.use(cors(corsOptions));
 
 // Health check endpoint (must be before CSRF middleware)
 app.get('/health', (req, res) => {
-  // Generate and set CSRF token
-  const csrfToken = Math.random().toString(36).substring(2);
-  res.cookie('XSRF-TOKEN', csrfToken, {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
-    path: '/',
-    httpOnly: true
-  });
-  res.setHeader('X-CSRF-Token', csrfToken);
   res.status(200).json({ status: 'ok' });
 });
 
-// Generate and set CSRF token for other routes
+// Generate and set CSRF token for all routes
 app.use((req, res, next) => {
   const csrfToken = Math.random().toString(36).substring(2);
   res.cookie('XSRF-TOKEN', csrfToken, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
     path: '/',
-    httpOnly: true
+    httpOnly: false // Changed to false to allow client-side access
   });
   res.setHeader('X-CSRF-Token', csrfToken);
   next();
@@ -70,6 +61,11 @@ const verifyCsrfToken = (req, res, next) => {
   const cookieToken = req.cookies['XSRF-TOKEN'];
 
   if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
+    console.error('CSRF Token Mismatch:', {
+      headerToken: csrfToken,
+      cookieToken: cookieToken,
+      path: req.path
+    });
     return res.status(403).json({ message: 'Invalid CSRF token' });
   }
 

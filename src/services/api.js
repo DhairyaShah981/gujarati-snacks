@@ -74,6 +74,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -81,7 +82,12 @@ api.interceptors.request.use(
 // Get CSRF token
 const getCsrfToken = async () => {
   try {
-    await api.get('/health');
+    const response = await api.get('/health');
+    const csrfToken = response.headers['x-csrf-token'];
+    if (csrfToken) {
+      document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; secure; sameSite=none`;
+    }
+    return csrfToken;
   } catch (error) {
     console.error('Error getting CSRF token:', error);
     throw error;
