@@ -51,11 +51,21 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await signup(userData);
-      const newUser = response.data?.user || response.data || null;
+      
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      const newUser = response.data.user || null;
+      if (!newUser) {
+        throw new Error('User data not received');
+      }
+
       setUser(newUser);
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to signup';
+      console.error('Signup error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to signup';
       setError(errorMessage);
       throw new Error(errorMessage);
     }

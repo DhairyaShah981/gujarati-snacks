@@ -34,7 +34,23 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
 
 export const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password, phoneNumber } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -44,9 +60,12 @@ export const signup = async (req, res) => {
 
     // Create new user
     const user = new User({
-      name,
+      firstName,
+      lastName,
       email,
-      password
+      password,
+      phoneNumber: phoneNumber || '',
+      role: 'user'
     });
 
     await user.save();
@@ -55,29 +74,24 @@ export const signup = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user._id);
 
     // Set cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 15 * 60 * 1000 // 15 minutes
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    setTokenCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
       message: 'User created successfully',
       user: {
         id: user._id,
-        name: user.name,
-        email: user.email
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role
       }
     });
   } catch (error) {
+    console.error('Signup error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Error creating user' });
   }
 };

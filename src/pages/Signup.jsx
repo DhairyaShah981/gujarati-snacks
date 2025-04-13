@@ -28,8 +28,26 @@ const Signup = () => {
     e.preventDefault();
     setError('');
 
+    // Validate form data
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Invalid email format');
       return;
     }
 
@@ -38,13 +56,6 @@ const Signup = () => {
     try {
       // Remove confirmPassword and format data for API
       const { confirmPassword, ...signupData } = formData;
-      
-      // Make sure all required fields are present
-      if (!signupData.firstName || !signupData.lastName || !signupData.email || !signupData.password) {
-        setError('All fields are required');
-        setLoading(false);
-        return;
-      }
       
       await signup(signupData);
       navigate('/profile');
