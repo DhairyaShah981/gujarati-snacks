@@ -75,22 +75,35 @@ const verifyCsrfToken = (req, res, next) => {
   const csrfToken = req.headers['x-csrf-token'];
   const cookieToken = req.cookies['XSRF-TOKEN'];
   
-  console.log('CSRF Validation:', {
+  console.log('CSRF Validation Debug:', {
     path: req.path,
     method: req.method,
-    headerToken: csrfToken,
-    cookieToken: cookieToken,
-    allHeaders: req.headers,
-    allCookies: req.cookies
+    headers: {
+      'x-csrf-token': csrfToken,
+      'all-headers': req.headers
+    },
+    cookies: {
+      'XSRF-TOKEN': cookieToken,
+      'all-cookies': req.cookies
+    }
   });
 
-  if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
-    console.error('CSRF Token Mismatch:', {
+  if (!csrfToken) {
+    console.error('Missing CSRF token in headers');
+    return res.status(403).json({ message: 'Missing CSRF token in headers' });
+  }
+
+  if (!cookieToken) {
+    console.error('Missing CSRF token in cookies');
+    return res.status(403).json({ message: 'Missing CSRF token in cookies' });
+  }
+
+  if (csrfToken !== cookieToken) {
+    console.error('CSRF token mismatch:', {
       headerToken: csrfToken,
-      cookieToken: cookieToken,
-      path: req.path
+      cookieToken: cookieToken
     });
-    return res.status(403).json({ message: 'Invalid CSRF token' });
+    return res.status(403).json({ message: 'CSRF token mismatch' });
   }
 
   console.log('CSRF token validated successfully');
