@@ -5,14 +5,27 @@ import config from '../config';
 
 const About = () => {
   const getImagePath = (imagePath) => {
-    if (!imagePath) return 'https://github.com/DhairyaShah981/gujarati-snacks/tree/main/public/images/team/placeholder.jpg';
-    if (imagePath.startsWith('http')) return imagePath;
+    if (!imagePath) {
+      console.log('No image path provided, using placeholder');
+      return 'https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public/images/team/placeholder.jpg';
+    }
+    if (imagePath.startsWith('http')) {
+      console.log('Using direct URL:', imagePath);
+      return imagePath;
+    }
     // For GitHub images
     if (imagePath.startsWith('/images/')) {
-      return `https://github.com/DhairyaShah981/gujarati-snacks/tree/main/public${imagePath}`;
+      const url = `https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public${imagePath}`;
+      console.log('Generated GitHub URL:', url);
+      return url;
     }
+    console.log('Using base URL:', `${config.baseUrl}${imagePath}`);
     return `${config.baseUrl}${imagePath}`;
   };
+
+  // Test URLs
+  console.log('Founder URL:', getImagePath('/images/team/founder.jpeg'));
+  console.log('Cuisine URL:', getImagePath('/images/team/gujarati-cuisine.jpg'));
 
   return (
     <div className="min-h-screen">
@@ -52,6 +65,7 @@ const About = () => {
                   alt="Gujarati Cuisine"
                   className="w-full h-full object-cover rounded-lg shadow-lg"
                   onError={(e) => {
+                    console.error('Error loading image:', e.target.src);
                     e.target.onerror = null;
                     e.target.src = 'https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public/images/team/placeholder.jpg';
                   }}
@@ -100,6 +114,7 @@ const About = () => {
                     alt="Dhairya Shah" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('Error loading image:', e.target.src);
                       e.target.onerror = null;
                       e.target.src = 'https://raw.githubusercontent.com/DhairyaShah981/gujarati-snacks/main/public/images/team/placeholder.jpg';
                     }}
