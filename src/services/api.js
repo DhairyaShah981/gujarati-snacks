@@ -51,14 +51,23 @@ api.interceptors.response.use(
 // Add request interceptor for tokens
 api.interceptors.request.use(
   async (config) => {
+    console.log('Request interceptor - Original config:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers
+    });
+
     // Get CSRF token from cookie
     const csrfToken = document.cookie
       .split('; ')
       .find(row => row.startsWith('XSRF-TOKEN='))
       ?.split('=')[1];
 
+    console.log('Request interceptor - Found CSRF token:', csrfToken);
+
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
+      console.log('Request interceptor - Added CSRF token to headers:', config.headers);
     }
 
     // Get access token from cookie
@@ -82,10 +91,14 @@ api.interceptors.request.use(
 // Get CSRF token
 const getCsrfToken = async () => {
   try {
+    console.log('Getting CSRF token from health endpoint');
     const response = await api.get('/health');
     const csrfToken = response.headers['x-csrf-token'];
+    console.log('Received CSRF token from server:', csrfToken);
+    
     if (csrfToken) {
       document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; secure; sameSite=none`;
+      console.log('Set CSRF token in cookie');
     }
     return csrfToken;
   } catch (error) {
@@ -97,10 +110,12 @@ const getCsrfToken = async () => {
 // Auth APIs
 export const login = async (credentials) => {
   try {
+    console.log('Starting login process');
     // First, get a CSRF token
     await getCsrfToken();
     
     // Then make the login request
+    console.log('Making login request with credentials');
     const response = await api.post('/auth/login', credentials);
     return response.data;
   } catch (error) {
@@ -111,10 +126,12 @@ export const login = async (credentials) => {
 
 export const signup = async (userData) => {
   try {
+    console.log('Starting signup process');
     // First, get a CSRF token
     await getCsrfToken();
     
     // Then make the signup request
+    console.log('Making signup request with user data:', userData);
     const response = await api.post('/auth/signup', userData);
     return response.data;
   } catch (error) {

@@ -37,21 +37,36 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Health check endpoint (must be before CSRF middleware)
+// Health check endpoint
 app.get('/health', (req, res) => {
+  const csrfToken = Math.random().toString(36).substring(2);
+  console.log('Health endpoint - Generated CSRF token:', csrfToken);
+  
+  res.cookie('XSRF-TOKEN', csrfToken, {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    path: '/',
+    httpOnly: false
+  });
+  res.setHeader('X-CSRF-Token', csrfToken);
+  
+  console.log('Health endpoint - Set CSRF token in response');
   res.status(200).json({ status: 'ok' });
 });
 
 // Generate and set CSRF token for all routes
 app.use((req, res, next) => {
   const csrfToken = Math.random().toString(36).substring(2);
+  console.log('Generated new CSRF token:', csrfToken);
+  
   res.cookie('XSRF-TOKEN', csrfToken, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
     path: '/',
-    httpOnly: false // Changed to false to allow client-side access
+    httpOnly: false
   });
   res.setHeader('X-CSRF-Token', csrfToken);
+  console.log('Set CSRF token in cookie and header');
   next();
 });
 
@@ -59,6 +74,15 @@ app.use((req, res, next) => {
 const verifyCsrfToken = (req, res, next) => {
   const csrfToken = req.headers['x-csrf-token'];
   const cookieToken = req.cookies['XSRF-TOKEN'];
+  
+  console.log('CSRF Validation:', {
+    path: req.path,
+    method: req.method,
+    headerToken: csrfToken,
+    cookieToken: cookieToken,
+    allHeaders: req.headers,
+    allCookies: req.cookies
+  });
 
   if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
     console.error('CSRF Token Mismatch:', {
@@ -69,6 +93,7 @@ const verifyCsrfToken = (req, res, next) => {
     return res.status(403).json({ message: 'Invalid CSRF token' });
   }
 
+  console.log('CSRF token validated successfully');
   next();
 };
 
