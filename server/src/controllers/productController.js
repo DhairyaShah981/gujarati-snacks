@@ -3,87 +3,70 @@ import Product from '../models/Product.js';
 // Update all product image paths
 export const updateAllProductImages = async (req, res) => {
   try {
-    const products = await Product.find({});
-    
+    const products = await Product.find();
     for (const product of products) {
-      // Convert product name to filename format (lowercase, hyphenated)
-      const filename = product.name
-        .toLowerCase()
-        .replace('gujarati ', '')
-        .replace(/ /g, '-')
-        + '.jpeg';
-      
-      // Update image path
-      const imagePath = `/images/products/${filename}`;
-      await Product.findByIdAndUpdate(product._id, { image: imagePath });
+      product.image = `/images/products/optimized/${product.name.toLowerCase()}-medium.webp`;
+      await product.save();
     }
-    
     res.json({ message: 'All product images updated successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating product images', error: error.message });
+    res.status(500).json({ message: 'Error updating product images' });
   }
 };
 
 // Get all products
 export const getProducts = async (req, res) => {
   try {
-    const { category, search, sort, page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 12, category, search, sort } = req.query;
     const query = {};
 
-    // Apply filters
-    if (category && category !== 'all') {
+    if (category) {
       query.category = category;
     }
+
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
+      query.name = { $regex: search, $options: 'i' };
     }
 
-    // Apply sorting
-    let sortOption = {};
+    const sortOptions = {};
     if (sort) {
       switch (sort) {
-        case 'price_asc':
-          sortOption = { price: 1 };
+        case 'name':
+          sortOptions.name = 1;
           break;
-        case 'price_desc':
-          sortOption = { price: -1 };
+        case 'price':
+          sortOptions.price = 1;
           break;
-        case 'rating':
-          sortOption = { rating: -1 };
+        case 'price-desc':
+          sortOptions.price = -1;
           break;
         default:
-          sortOption = { createdAt: -1 };
+          sortOptions.createdAt = -1;
       }
+    } else {
+      sortOptions.createdAt = -1;
     }
 
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get total count for pagination
-    const total = await Product.countDocuments(query);
-    
-    // Get paginated products
     const products = await Product.find(query)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(parseInt(limit));
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await Product.countDocuments(query);
 
     res.json({
       products,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / parseInt(limit)),
-      totalProducts: total
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching products', error: error.message });
+    res.status(500).json({ message: 'Error fetching products' });
   }
 };
 
-// Get single product
-export const getProduct = async (req, res) => {
+// Get product by ID
+export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -91,37 +74,39 @@ export const getProduct = async (req, res) => {
     }
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching product', error: error.message });
+    res.status(500).json({ message: 'Error fetching product' });
   }
 };
 
-// Create product (admin only)
+// Create product
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = new Product(req.body);
+    await product.save();
     res.status(201).json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating product', error: error.message });
+    res.status(500).json({ message: 'Error creating product' });
   }
 };
 
-// Update product (admin only)
+// Update product
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating product', error: error.message });
+    res.status(500).json({ message: 'Error updating product' });
   }
 };
 
-// Delete product (admin only)
+// Delete product
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
@@ -130,7 +115,7 @@ export const deleteProduct = async (req, res) => {
     }
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting product', error: error.message });
+    res.status(500).json({ message: 'Error deleting product' });
   }
 };
 
