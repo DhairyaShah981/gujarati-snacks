@@ -21,26 +21,39 @@ api.interceptors.response.use(
     
     const originalRequest = error.config;
 
-    // Handle 401 errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry && !window.location.pathname.includes('/login')) {
       originalRequest._retry = true;
 
       try {
+        // Get refresh token from cookie
+        const refreshToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('refreshToken='))
+          ?.split('=')[1];
+
+        if (!refreshToken) {
+          console.error('No refresh token found');
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
         // Try to refresh the token
-        const response = await api.post('/auth/refresh-token');
+        const response = await api.post('/auth/refresh-token', { refreshToken });
         const { accessToken } = response.data;
-
-        // Update the access token in the cookie
-        document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none`;
-
+        
+        // Update access token in cookie
+        document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
+        
         // Retry the original request
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, redirect to login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        console.error('Token refresh failed:', refreshError);
+        // Clear tokens and redirect to login
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
