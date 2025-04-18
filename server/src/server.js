@@ -58,11 +58,18 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Verify CSRF token middleware
+// CSRF verification middleware
 const verifyCsrfToken = (req, res, next) => {
-  const csrfToken = req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'];
-  const cookieToken = req.cookies['XSRF-TOKEN'];
-  
+  // Skip CSRF check for health endpoint
+  if (req.path === '/api/health') {
+    return next();
+  }
+
+  // Get token from header or cookie
+  const tokenFromHeader = req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'];
+  const tokenFromCookie = req.cookies['XSRF-TOKEN'];
+
+  // Log CSRF verification details
   console.log('CSRF Validation Debug:', {
     path: req.path,
     method: req.method,
@@ -72,41 +79,26 @@ const verifyCsrfToken = (req, res, next) => {
       'all-headers': req.headers
     },
     cookies: {
-      'XSRF-TOKEN': cookieToken,
+      'XSRF-TOKEN': tokenFromCookie,
       'all-cookies': req.cookies
     }
   });
 
-  if (!csrfToken) {
-    console.error('Missing CSRF token in headers');
-    return res.status(403).json({ message: 'Missing CSRF token in headers' });
-  }
-
-  if (!cookieToken) {
-    console.error('Missing CSRF token in cookies');
-    return res.status(403).json({ message: 'Missing CSRF token in cookies' });
-  }
-
-  if (csrfToken !== cookieToken) {
-    console.error('CSRF token mismatch:', {
-      headerToken: csrfToken,
-      cookieToken: cookieToken
+  // Verify token
+  if (!tokenFromHeader || !tokenFromCookie || tokenFromHeader !== tokenFromCookie) {
+    console.error('CSRF token verification failed:', {
+      headerToken: tokenFromHeader,
+      cookieToken: tokenFromCookie,
+      match: tokenFromHeader === tokenFromCookie
     });
-    return res.status(403).json({ message: 'CSRF token mismatch' });
+    return res.status(403).json({ message: 'CSRF token verification failed' });
   }
 
-  console.log('CSRF token validated successfully');
   next();
 };
 
-// Apply CSRF protection only to auth routes
-app.use('/api/auth', (req, res, next) => {
-  // Skip CSRF check for health endpoint
-  if (req.path === '/health') {
-    return next();
-  }
-  verifyCsrfToken(req, res, next);
-});
+// Apply CSRF protection to auth routes
+app.use('/api/auth', verifyCsrfToken);
 
 // Routes
 app.use('/api/auth', authRoutes);

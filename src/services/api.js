@@ -64,8 +64,7 @@ api.interceptors.response.use(
 // Get CSRF token
 const getCsrfToken = async () => {
   try {
-    console.log('Getting CSRF token from health endpoint');
-    const response = await api.get('/health', {
+    const response = await axios.get('/health', {
       withCredentials: true,
       headers: {
         'Accept': 'application/json',
@@ -73,47 +72,20 @@ const getCsrfToken = async () => {
       }
     });
     
-    // Log all response headers
+    // Log response headers for debugging
     console.log('Health endpoint response headers:', response.headers);
     
+    // Get CSRF token from response headers
     const csrfToken = response.headers['x-csrf-token'];
-    console.log('Received CSRF token from server:', csrfToken);
-    
     if (csrfToken) {
-      // Set cookie with proper options
-      const cookieOptions = {
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-      };
-      
-      const cookieString = `XSRF-TOKEN=${csrfToken}; ${Object.entries(cookieOptions)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('; ')}`;
-      
-      console.log('Setting cookie with string:', cookieString);
-      document.cookie = cookieString;
-      
-      // Verify cookie was set
-      const allCookies = document.cookie;
-      console.log('All cookies after setting:', allCookies);
-      const verifyToken = allCookies
-        .split('; ')
-        .find(row => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1];
-      console.log('Verified token from cookies:', verifyToken);
-      
-      if (verifyToken !== csrfToken) {
-        console.error('Cookie verification failed:', { set: csrfToken, got: verifyToken });
-      }
-    } else {
-      console.error('No CSRF token found in response headers');
-      throw new Error('No CSRF token in response');
+      // Set CSRF token in cookie
+      document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; secure; samesite=none`;
+      return csrfToken;
     }
-    return csrfToken;
+    return null;
   } catch (error) {
     console.error('Error getting CSRF token:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -121,51 +93,28 @@ const getCsrfToken = async () => {
 api.interceptors.request.use(
   async (config) => {
     // Skip token checks for health endpoint
-    if (config.url === '/health') {
+    if (config.url === '/api/health') {
       return config;
     }
 
-    console.log('Request interceptor - Checking cookies for CSRF token');
-    const allCookies = document.cookie;
-    console.log('All cookies in interceptor:', allCookies);
-    
-    const csrfToken = allCookies
+    // Skip token checks for login/signup requests
+    if (config.url === '/api/auth/login' || config.url === '/api/auth/signup') {
+      return config;
+    }
+
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie
       .split('; ')
       .find(row => row.startsWith('XSRF-TOKEN='))
       ?.split('=')[1];
 
-    console.log('Found CSRF token in interceptor:', csrfToken);
-
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
-      console.log('Updated request headers with CSRF token:', config.headers);
-    } else {
-      console.error('No CSRF token found in cookies during interceptor');
-      try {
-        console.log('Attempting to get new CSRF token');
-        const newToken = await getCsrfToken();
-        config.headers['X-CSRF-Token'] = newToken;
-        console.log('Updated request with new CSRF token');
-        return config;
-      } catch (error) {
-        console.error('Failed to get new CSRF token:', error);
-        return Promise.reject(error);
-      }
-    }
-
-    const accessToken = allCookies
-      .split('; ')
-      .find(row => row.startsWith('accessToken='))
-      ?.split('=')[1];
-
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -179,7 +128,7 @@ export const login = async (credentials) => {
     
     // Then make the login request
     console.log('Making login request with credentials');
-    const response = await api.post('/auth/login', credentials);
+    const response = await api.post('/api/auth/login', credentials);
     
     // Set both access and refresh tokens
     const { accessToken, refreshToken } = response.data;
