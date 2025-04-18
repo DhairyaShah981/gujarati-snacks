@@ -37,7 +37,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Health check endpoint (must be first, before any middleware)
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   const csrfToken = Math.random().toString(36).substring(2);
   console.log('Health endpoint - Generated CSRF token:', csrfToken);
   
