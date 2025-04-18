@@ -48,35 +48,92 @@ api.interceptors.response.use(
   }
 );
 
+// Get CSRF token
+const getCsrfToken = async () => {
+  try {
+    console.log('Getting CSRF token from health endpoint');
+    const response = await api.get('/health', {
+      withCredentials: true
+    });
+    
+    console.log('Health endpoint response headers:', response.headers);
+    
+    const csrfToken = response.headers['x-csrf-token'];
+    console.log('Received CSRF token from server:', csrfToken);
+    
+    if (csrfToken) {
+      const cookieOptions = {
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+      };
+      
+      const cookieString = `XSRF-TOKEN=${csrfToken}; ${Object.entries(cookieOptions)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('; ')}`;
+      
+      console.log('Setting cookie with string:', cookieString);
+      document.cookie = cookieString;
+      
+      // Verify cookie was set
+      const allCookies = document.cookie;
+      console.log('All cookies after setting:', allCookies);
+      const verifyToken = allCookies
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1];
+      console.log('Verified token from cookies:', verifyToken);
+      
+      if (verifyToken !== csrfToken) {
+        console.error('Cookie verification failed:', { set: csrfToken, got: verifyToken });
+      }
+    } else {
+      console.error('No CSRF token found in response headers');
+      throw new Error('No CSRF token in response');
+    }
+    return csrfToken;
+  } catch (error) {
+    console.error('Error getting CSRF token:', error);
+    throw error;
+  }
+};
+
 // Add request interceptor for tokens
 api.interceptors.request.use(
   async (config) => {
-    console.log('Request interceptor - Original config:', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers
-    });
+    if (config.url === '/health') {
+      return config;
+    }
 
-    // Get CSRF token from cookie
-    const csrfToken = document.cookie
+    console.log('Request interceptor - Checking cookies for CSRF token');
+    const allCookies = document.cookie;
+    console.log('All cookies in interceptor:', allCookies);
+    
+    const csrfToken = allCookies
       .split('; ')
       .find(row => row.startsWith('XSRF-TOKEN='))
       ?.split('=')[1];
 
-    console.log('Request interceptor - Found CSRF token in cookie:', csrfToken);
-    console.log('All cookies:', document.cookie);
+    console.log('Found CSRF token in interceptor:', csrfToken);
 
     if (csrfToken) {
-      // Set both lowercase and uppercase versions of the header
-      config.headers['x-csrf-token'] = csrfToken;
       config.headers['X-CSRF-Token'] = csrfToken;
-      console.log('Request interceptor - Updated headers with CSRF token:', config.headers);
+      console.log('Updated request headers with CSRF token:', config.headers);
     } else {
-      console.error('No CSRF token found in cookies');
+      console.error('No CSRF token found in cookies during interceptor');
+      try {
+        console.log('Attempting to get new CSRF token');
+        const newToken = await getCsrfToken();
+        config.headers['X-CSRF-Token'] = newToken;
+        console.log('Updated request with new CSRF token');
+        return config;
+      } catch (error) {
+        console.error('Failed to get new CSRF token:', error);
+        return Promise.reject(error);
+      }
     }
 
-    // Get access token from cookie
-    const accessToken = document.cookie
+    const accessToken = allCookies
       .split('; ')
       .find(row => row.startsWith('accessToken='))
       ?.split('=')[1];
@@ -92,33 +149,6 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-// Get CSRF token
-const getCsrfToken = async () => {
-  try {
-    console.log('Getting CSRF token from health endpoint');
-    const response = await api.get('/health');
-    
-    // Log all response headers
-    console.log('Health endpoint response headers:', response.headers);
-    
-    // Try both lowercase and uppercase versions
-    const csrfToken = response.headers['x-csrf-token'] || response.headers['X-CSRF-Token'];
-    console.log('Received CSRF token from server:', csrfToken);
-    
-    if (csrfToken) {
-      // Set cookie with explicit domain and path
-      document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; domain=${window.location.hostname}; secure; sameSite=none`;
-      console.log('Set CSRF token in cookie:', document.cookie);
-    } else {
-      console.error('No CSRF token found in response headers');
-    }
-    return csrfToken;
-  } catch (error) {
-    console.error('Error getting CSRF token:', error);
-    throw error;
-  }
-};
 
 // Auth APIs
 export const login = async (credentials) => {
