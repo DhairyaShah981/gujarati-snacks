@@ -180,6 +180,17 @@ export const login = async (credentials) => {
     // Then make the login request
     console.log('Making login request with credentials');
     const response = await api.post('/auth/login', credentials);
+    
+    // Set both access and refresh tokens
+    const { accessToken, refreshToken } = response.data;
+    
+    // Set access token cookie
+    document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
+    
+    // Set refresh token cookie
+    document.cookie = `refreshToken=${refreshToken}; path=/; secure; sameSite=none; maxAge=604800000`;
+    
+    console.log('Login successful, tokens set');
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
@@ -206,8 +217,9 @@ export const signup = async (userData) => {
 export const logout = async () => {
   try {
     await api.post('/auth/logout');
-    // Clear cookies
+    // Clear all tokens
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   } catch (error) {
     console.error('Logout error:', error);

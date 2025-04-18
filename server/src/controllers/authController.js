@@ -134,12 +134,19 @@ export const login = async (req, res) => {
       message: 'Login successful',
       user: {
         id: user._id,
-        name: user.name,
-        email: user.email
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in' });
+    console.error('Login error details:', error);
+    res.status(500).json({ 
+      message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
