@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import addressRoutes from './routes/addressRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -27,17 +28,15 @@ app.use(cookieParser());
 const corsOptions = {
   origin: [
     'https://gujarati-snacks.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
+    'http://localhost:5173'
   ],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  exposedHeaders: ['X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 };
 
 app.use(cors(corsOptions));
 
-// Health check endpoint
+// Health check endpoint (must be first, before any middleware)
 app.get('/health', (req, res) => {
   const csrfToken = Math.random().toString(36).substring(2);
   console.log('Health endpoint - Generated CSRF token:', csrfToken);
@@ -54,25 +53,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Generate and set CSRF token for all routes
-app.use((req, res, next) => {
-  const csrfToken = Math.random().toString(36).substring(2);
-  console.log('Generated new CSRF token:', csrfToken);
-  
-  res.cookie('XSRF-TOKEN', csrfToken, {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
-    path: '/',
-    httpOnly: false
-  });
-  res.setHeader('X-CSRF-Token', csrfToken);
-  console.log('Set CSRF token in cookie and header');
-  next();
-});
-
 // Verify CSRF token middleware
 const verifyCsrfToken = (req, res, next) => {
-  // Check both lowercase and uppercase versions of the header
   const csrfToken = req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'];
   const cookieToken = req.cookies['XSRF-TOKEN'];
   
@@ -112,21 +94,13 @@ const verifyCsrfToken = (req, res, next) => {
   next();
 };
 
-// Apply CSRF protection to protected routes only
-app.use((req, res, next) => {
-  const publicRoutes = [
-    '/health',
-    '/api/products',
-    '/api/auth/signup',
-    '/api/auth/login',
-    '/api/auth/health'
-  ];
-
-  if (publicRoutes.some(route => req.path.startsWith(route))) {
-    next();
-  } else {
-    verifyCsrfToken(req, res, next);
+// Apply CSRF protection only to auth routes
+app.use('/api/auth', (req, res, next) => {
+  // Skip CSRF check for health endpoint
+  if (req.path === '/health') {
+    return next();
   }
+  verifyCsrfToken(req, res, next);
 });
 
 // Routes
@@ -134,8 +108,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/addresses', addressRoutes);
 
-// Error handling middleware
+// Error handling
 app.use(errorHandler);
 
 // MongoDB connection

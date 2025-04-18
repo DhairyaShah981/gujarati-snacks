@@ -52,9 +52,7 @@ api.interceptors.response.use(
 const getCsrfToken = async () => {
   try {
     console.log('Getting CSRF token from health endpoint');
-    const response = await api.get('/health', {
-      withCredentials: true
-    });
+    const response = await api.get('/health');
     
     console.log('Health endpoint response headers:', response.headers);
     
