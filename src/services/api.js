@@ -2,8 +2,8 @@ import axios from 'axios';
 import config from '../config';
 
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://gujarati-snacks-api.onrender.com/api'
-  : 'http://localhost:5001/api';
+  ? 'https://gujarati-snacks-api.onrender.com'
+  : 'http://localhost:5001';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -155,7 +155,7 @@ export const signup = async (userData) => {
     
     // Then make the signup request
     console.log('Making signup request with user data:', userData);
-    const response = await api.post('/auth/signup', userData);
+    const response = await api.post('/api/auth/signup', userData);
     return response.data;
   } catch (error) {
     console.error('Signup error:', error);
@@ -165,7 +165,7 @@ export const signup = async (userData) => {
 
 export const logout = async () => {
   try {
-    await api.post('/auth/logout');
+    await api.post('/api/auth/logout');
     // Clear all tokens
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -178,7 +178,7 @@ export const logout = async () => {
 
 export const getProfile = async () => {
   try {
-    const response = await api.get('/auth/profile');
+    const response = await api.get('/api/auth/profile');
     if (!response.data) {
       throw new Error('No user data received');
     }
