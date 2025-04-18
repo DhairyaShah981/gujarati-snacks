@@ -38,7 +38,11 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await login(credentials);
       const userData = response.data?.user || response.data || null;
-      setUser(userData);
+      if (userData) {
+        setUser(userData);
+        // Fetch profile to ensure we have the latest user data
+        await fetchUser();
+      }
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to login';
