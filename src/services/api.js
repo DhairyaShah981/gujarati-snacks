@@ -52,7 +52,7 @@ api.interceptors.response.use(
 const getCsrfToken = async () => {
   try {
     console.log('Getting CSRF token from health endpoint');
-    const response = await api.get('/api/health', {
+    const response = await api.get('/health', {
       withCredentials: true,
       headers: {
         'Accept': 'application/json',
@@ -108,7 +108,7 @@ const getCsrfToken = async () => {
 api.interceptors.request.use(
   async (config) => {
     // Skip token checks for health endpoint
-    if (config.url === '/api/health') {
+    if (config.url === '/health') {
       return config;
     }
 
