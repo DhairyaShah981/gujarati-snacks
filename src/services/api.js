@@ -52,14 +52,22 @@ api.interceptors.response.use(
 const getCsrfToken = async () => {
   try {
     console.log('Getting CSRF token from health endpoint');
-    const response = await api.get('/health');
+    const response = await api.get('/api/health', {
+      withCredentials: true,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
     
+    // Log all response headers
     console.log('Health endpoint response headers:', response.headers);
     
     const csrfToken = response.headers['x-csrf-token'];
     console.log('Received CSRF token from server:', csrfToken);
     
     if (csrfToken) {
+      // Set cookie with proper options
       const cookieOptions = {
         path: '/',
         secure: true,
@@ -99,7 +107,8 @@ const getCsrfToken = async () => {
 // Add request interceptor for tokens
 api.interceptors.request.use(
   async (config) => {
-    if (config.url === '/health') {
+    // Skip token checks for health endpoint
+    if (config.url === '/api/health') {
       return config;
     }
 

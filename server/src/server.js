@@ -31,7 +31,8 @@ const corsOptions = {
     'http://localhost:5173'
   ],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Accept'],
+  exposedHeaders: ['X-CSRF-Token']
 };
 
 app.use(cors(corsOptions));
@@ -41,13 +42,17 @@ app.get('/api/health', (req, res) => {
   const csrfToken = Math.random().toString(36).substring(2);
   console.log('Health endpoint - Generated CSRF token:', csrfToken);
   
+  // Set cookie
   res.cookie('XSRF-TOKEN', csrfToken, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
     path: '/',
     httpOnly: false
   });
+  
+  // Set headers
   res.setHeader('X-CSRF-Token', csrfToken);
+  res.setHeader('Access-Control-Expose-Headers', 'X-CSRF-Token');
   
   console.log('Health endpoint - Set CSRF token in response');
   res.status(200).json({ status: 'ok' });
