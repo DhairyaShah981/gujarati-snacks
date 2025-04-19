@@ -182,7 +182,15 @@ export const login = async (credentials) => {
     // Set refresh token cookie
     document.cookie = `refreshToken=${refreshToken}; path=/; SameSite=None; Secure; Max-Age=604800`;
     
-    console.log('Login successful, tokens set');
+    // Verify tokens were set
+    const accessTokenSet = document.cookie.includes('accessToken=');
+    const refreshTokenSet = document.cookie.includes('refreshToken=');
+    
+    console.log('Login successful, tokens set:', {
+      accessTokenSet,
+      refreshTokenSet,
+      allCookies: document.cookie
+    });
     
     // Return user data directly from login response
     return { user, accessToken, refreshToken };

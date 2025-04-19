@@ -100,55 +100,65 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
+    // Verify password
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+
+    const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET, {
+      expiresIn: '7d'
+    });
 
     // Set cookies
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'none',
-      maxAge: 15 * 60 * 1000 // 15 minutes
+      maxAge: 60 * 60 * 1000 // 1 hour
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    res.json({
-      message: 'Login successful',
+    // Log token generation
+    console.log('Login successful:', {
+      userId: user._id,
+      accessTokenSet: !!accessToken,
+      refreshTokenSet: !!refreshToken
+    });
+
+    // Return user data without password
+    const userData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    res.status(200).json({
+      user: userData,
       accessToken,
-      refreshToken,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role
-      }
+      refreshToken
     });
   } catch (error) {
-    console.error('Login error details:', error);
-    res.status(500).json({ 
-      message: 'Error logging in',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
