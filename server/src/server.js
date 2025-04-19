@@ -65,8 +65,12 @@ const verifyCsrfToken = (req, res, next) => {
     return next();
   }
 
-  // Get token from header or cookie
-  const tokenFromHeader = req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'];
+  // Get token from header (case insensitive)
+  const tokenFromHeader = req.headers['x-csrf-token'] || 
+                         req.headers['X-CSRF-Token'] || 
+                         req.headers['x-csrf-token']?.toLowerCase() || 
+                         req.headers['X-CSRF-Token']?.toLowerCase();
+  
   const tokenFromCookie = req.cookies['XSRF-TOKEN'];
 
   // Log CSRF verification details
@@ -94,6 +98,7 @@ const verifyCsrfToken = (req, res, next) => {
     return res.status(403).json({ message: 'CSRF token verification failed' });
   }
 
+  console.log('CSRF token validated successfully');
   next();
 };
 

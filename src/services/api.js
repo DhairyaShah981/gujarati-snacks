@@ -64,7 +64,8 @@ api.interceptors.response.use(
 // Get CSRF token
 const getCsrfToken = async () => {
   try {
-    const response = await axios.get('/health', {
+    console.log('Getting CSRF token from health endpoint');
+    const response = await axios.get('/api/health', {
       withCredentials: true,
       headers: {
         'Accept': 'application/json',
@@ -77,9 +78,25 @@ const getCsrfToken = async () => {
     
     // Get CSRF token from response headers
     const csrfToken = response.headers['x-csrf-token'];
+    console.log('Received CSRF token from server:', csrfToken);
+    
     if (csrfToken) {
-      // Set CSRF token in cookie
-      document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; secure; samesite=none`;
+      // Set CSRF token in cookie with proper options
+      const cookieString = `XSRF-TOKEN=${csrfToken}; path=/; secure; samesite=none`;
+      document.cookie = cookieString;
+      console.log('Setting cookie with string:', cookieString);
+      
+      // Verify the cookie was set correctly
+      const allCookies = document.cookie;
+      console.log('All cookies after setting:', allCookies);
+      
+      // Verify the token was set correctly
+      const tokenFromCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1];
+      
+      console.log('Verified token from cookies:', tokenFromCookie);
       return csrfToken;
     }
     return null;
@@ -124,11 +141,18 @@ export const login = async (credentials) => {
   try {
     console.log('Starting login process');
     // First, get a CSRF token
-    await getCsrfToken();
+    const csrfToken = await getCsrfToken();
+    if (!csrfToken) {
+      throw new Error('Failed to get CSRF token');
+    }
     
-    // Then make the login request
+    // Then make the login request with CSRF token
     console.log('Making login request with credentials');
-    const response = await api.post('/api/auth/login', credentials);
+    const response = await api.post('/api/auth/login', credentials, {
+      headers: {
+        'X-CSRF-Token': csrfToken
+      }
+    });
     
     // Set both access and refresh tokens
     const { accessToken, refreshToken } = response.data;
