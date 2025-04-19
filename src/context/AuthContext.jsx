@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (userData) => {
     try {
-      const response = await api.put('/auth/profile', userData);
+      const response = await api.put('/api/auth/profile', userData);
       // Check if response.data exists and has user property
       const updatedUser = response.data?.user || response.data || null;
       setUser(updatedUser);
