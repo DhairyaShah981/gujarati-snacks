@@ -169,7 +169,7 @@ export const AuthProvider = ({ children }) => {
   // Address management functions
   const addAddress = async (addressData) => {
     try {
-      const response = await api.post('/addresses', addressData);
+      const response = await api.post('/api/addresses', addressData);
       await fetchUser();
       return response.data;
     } catch (err) {
@@ -181,7 +181,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateAddress = async (addressId, addressData) => {
     try {
-      const response = await api.put(`/addresses/${addressId}`, addressData);
+      const response = await api.put(`/api/addresses/${addressId}`, addressData);
       await fetchUser();
       return response.data;
     } catch (err) {
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }) => {
 
   const deleteAddress = async (addressId) => {
     try {
-      const response = await api.delete(`/addresses/${addressId}`);
+      const response = await api.delete(`/api/addresses/${addressId}`);
       await fetchUser();
       return response.data;
     } catch (err) {
@@ -205,7 +205,7 @@ export const AuthProvider = ({ children }) => {
 
   const setDefaultAddress = async (addressId) => {
     try {
-      const response = await api.put(`/addresses/${addressId}/default`, {});
+      const response = await api.put(`/api/addresses/${addressId}/default`, {});
       await fetchUser();
       return response.data;
     } catch (err) {
