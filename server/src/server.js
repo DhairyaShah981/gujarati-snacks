@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
+import favoriteRoutes from './routes/favoriteRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import addressRoutes from './routes/addressRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -44,7 +45,7 @@ app.get('/api/health', (req, res) => {
   
   // Set cookie
   res.cookie('XSRF-TOKEN', csrfToken, {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'none',
     path: '/',
     httpOnly: false
@@ -102,13 +103,12 @@ const verifyCsrfToken = (req, res, next) => {
   next();
 };
 
-// Apply CSRF protection to auth routes
-app.use('/api/auth', verifyCsrfToken);
-
 // Routes
+app.use('/api/auth', verifyCsrfToken);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/favorites', favoriteRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/addresses', addressRoutes);
 

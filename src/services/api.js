@@ -85,7 +85,7 @@ const getCsrfToken = async () => {
     
     if (csrfToken) {
       // Set CSRF token in cookie with proper options
-      const cookieString = `XSRF-TOKEN=${csrfToken}; path=/; secure; samesite=none`;
+      const cookieString = `XSRF-TOKEN=${csrfToken}; path=/; SameSite=None; Secure`;
       document.cookie = cookieString;
       console.log('Setting cookie with string:', cookieString);
       
@@ -100,6 +100,12 @@ const getCsrfToken = async () => {
         ?.split('=')[1];
       
       console.log('Verified token from cookies:', tokenFromCookie);
+      
+      if (!tokenFromCookie) {
+        console.error('Failed to set CSRF token cookie');
+        return null;
+      }
+      
       return csrfToken;
     }
     return null;
@@ -171,10 +177,10 @@ export const login = async (credentials) => {
     const { accessToken, refreshToken, user } = response.data;
     
     // Set access token cookie
-    document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
+    document.cookie = `accessToken=${accessToken}; path=/; SameSite=None; Secure; Max-Age=3600`;
     
     // Set refresh token cookie
-    document.cookie = `refreshToken=${refreshToken}; path=/; secure; sameSite=none; maxAge=604800000`;
+    document.cookie = `refreshToken=${refreshToken}; path=/; SameSite=None; Secure; Max-Age=604800`;
     
     console.log('Login successful, tokens set');
     

@@ -6,6 +6,7 @@ export const protect = async (req, res, next) => {
   console.log('Request Path:', req.path);
   console.log('Request Method:', req.method);
   console.log('Headers:', {
+    'authorization': req.headers['authorization'],
     'x-csrf-token': req.headers['x-csrf-token'],
     'content-type': req.headers['content-type'],
     'cookie': req.headers['cookie']
@@ -40,8 +41,8 @@ export const protect = async (req, res, next) => {
         });
         res.cookie('accessToken', newAccessToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: true,
+          sameSite: 'none',
           maxAge: 15 * 60 * 1000, // 15 minutes
         });
         console.log('New Access Token Generated');
@@ -58,7 +59,33 @@ export const protect = async (req, res, next) => {
       next();
     } catch (error) {
       console.error('Token verification error:', error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      // Try to use refresh token if access token fails
+      if (refreshToken) {
+        try {
+          const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+          const newAccessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
+            expiresIn: '15m',
+          });
+          res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 15 * 60 * 1000,
+          });
+          
+          const user = await User.findById(decoded.id).select('-password');
+          if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+          }
+          req.user = user;
+          next();
+        } catch (refreshError) {
+          console.error('Refresh token verification failed:', refreshError);
+          res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+      } else {
+        res.status(401).json({ message: 'Not authorized, token failed' });
+      }
     }
   } catch (error) {
     console.error('Auth middleware error:', error);
