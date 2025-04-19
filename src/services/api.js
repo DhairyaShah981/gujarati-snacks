@@ -85,7 +85,7 @@ const getCsrfToken = async () => {
     
     if (csrfToken) {
       // Set CSRF token in cookie with proper options
-      const cookieString = `XSRF-TOKEN=${csrfToken}; path=/; SameSite=None; Secure`;
+      const cookieString = `XSRF-TOKEN=${csrfToken}; path=/; SameSite=None; Secure; Max-Age=3600`;
       document.cookie = cookieString;
       console.log('Setting cookie with string:', cookieString);
       
@@ -145,7 +145,9 @@ api.interceptors.request.use(
       ?.split('=')[1];
 
     if (csrfToken) {
+      // Set both header cases for maximum compatibility
       config.headers['X-CSRF-Token'] = csrfToken;
+      config.headers['x-csrf-token'] = csrfToken;
     }
 
     return config;

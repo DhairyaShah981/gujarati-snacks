@@ -12,6 +12,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import addressRoutes from './routes/addressRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import crypto from 'crypto';
 
 // Load environment variables
 dotenv.config();
@@ -32,31 +33,34 @@ const corsOptions = {
     'http://localhost:5173'
   ],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Accept'],
-  exposedHeaders: ['X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'x-csrf-token', 'Accept'],
+  exposedHeaders: ['X-CSRF-Token', 'x-csrf-token'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
 
-// Health check endpoint (must be first, before any middleware)
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  const csrfToken = Math.random().toString(36).substring(2);
+  const csrfToken = crypto.randomBytes(32).toString('hex');
   console.log('Health endpoint - Generated CSRF token:', csrfToken);
   
-  // Set cookie
+  // Set CSRF token in cookie with more permissive settings for Safari
   res.cookie('XSRF-TOKEN', csrfToken, {
-    secure: true,
-    sameSite: 'none',
-    path: '/',
-    httpOnly: false
+    httpOnly: false,  // Allow JavaScript to access the cookie
+    secure: true,     // Only send over HTTPS
+    sameSite: 'none', // Allow cross-site requests
+    path: '/',        // Available across all paths
+    maxAge: 3600      // 1 hour expiration
   });
   
-  // Set headers
+  // Set CSRF token in response header
   res.setHeader('X-CSRF-Token', csrfToken);
-  res.setHeader('Access-Control-Expose-Headers', 'X-CSRF-Token');
-  
   console.log('Health endpoint - Set CSRF token in response');
-  res.status(200).json({ status: 'ok' });
+  
+  res.json({ status: 'ok' });
 });
 
 // CSRF verification middleware
