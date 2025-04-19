@@ -65,8 +65,7 @@ api.interceptors.response.use(
 const getCsrfToken = async () => {
   try {
     console.log('Getting CSRF token from health endpoint');
-    const response = await axios.get('/api/health', {
-      withCredentials: true,
+    const response = await api.get('/api/health', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -76,8 +75,12 @@ const getCsrfToken = async () => {
     // Log response headers for debugging
     console.log('Health endpoint response headers:', response.headers);
     
-    // Get CSRF token from response headers
-    const csrfToken = response.headers['x-csrf-token'];
+    // Get CSRF token from response headers (case insensitive)
+    const csrfToken = response.headers['x-csrf-token'] || 
+                     response.headers['X-CSRF-Token'] ||
+                     response.headers['x-csrf-token']?.toLowerCase() || 
+                     response.headers['X-CSRF-Token']?.toLowerCase();
+    
     console.log('Received CSRF token from server:', csrfToken);
     
     if (csrfToken) {
