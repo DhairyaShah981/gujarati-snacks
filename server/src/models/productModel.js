@@ -17,7 +17,14 @@ const productSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true
+    default: '/images/placeholder.svg',
+    validate: {
+      validator: function(v) {
+        // Allow relative paths starting with /images/ or absolute URLs
+        return /^\/images\/.*$/.test(v) || /^https?:\/\/.*$/.test(v);
+      },
+      message: props => `${props.value} is not a valid image path or URL`
+    }
   },
   category: {
     type: String,

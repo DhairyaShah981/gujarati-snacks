@@ -301,7 +301,7 @@ export const setDefaultAddress = (id) => api.put(`/api/addresses/${id}/default`)
 
 // Order APIs
 export const createOrder = (orderData) => api.post('/api/orders', orderData);
-export const getOrders = () => api.get('/api/orders');
+export const getOrders = () => api.get('/api/orders/myorders');
 export const getOrder = (id) => api.get(`/api/orders/${id}`);
 
 export const updateProfile = (userData) => api.put('/api/auth/profile', userData);

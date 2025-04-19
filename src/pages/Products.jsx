@@ -36,7 +36,7 @@ const Products = () => {
       console.log('Fetching products with params:', {
         page: currentPage,
         limit: 12,
-        category: selectedCategory,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
         sort: sortBy,
         search: searchQuery,
       });
@@ -44,7 +44,7 @@ const Products = () => {
       const response = await getProducts({
         page: currentPage,
         limit: 12,
-        category: selectedCategory,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
         sort: sortBy,
         search: searchQuery,
       });
