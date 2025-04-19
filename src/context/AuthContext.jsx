@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
         console.log('Unauthorized - clearing user data');
         setUser(null);
         localStorage.removeItem('user');
+        // Don't redirect here, let the interceptor handle it
       }
     }
   };
@@ -47,8 +48,17 @@ export const AuthProvider = ({ children }) => {
         
         if (storedUser) {
           console.log('Found stored user, setting in context');
-          setUser(JSON.parse(storedUser));
-          await fetchUser();
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          
+          // Only fetch profile if we have a stored user
+          try {
+            await fetchUser();
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+            // Don't clear user data on profile fetch error
+            // Let the interceptor handle token refresh
+          }
         } else {
           console.log('No stored user found');
           setUser(null);
@@ -73,7 +83,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Login API response:', response);
       
       // Extract user data from response
-      const userData = response.user || response.data?.user || response.data || null;
+      const userData = response.user;
       console.log('Extracted user data:', userData);
       
       if (userData) {
@@ -84,10 +94,8 @@ export const AuthProvider = ({ children }) => {
         console.log('Storing user data in localStorage');
         localStorage.setItem('user', JSON.stringify(userData));
         
-        // Fetch profile to ensure we have the latest user data
-        console.log('Fetching user profile');
-        await fetchUser();
-        
+        // Don't fetch profile immediately after login
+        // The tokens need time to be properly set
         console.log('Login process completed successfully');
         return response;
       } else {
@@ -128,10 +136,16 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      setError(null);
+      console.log('Starting logout process');
       await logout();
+      console.log('Logout API call successful');
+      
+      // Clear all data
       setUser(null);
+      localStorage.removeItem('user');
+      console.log('User data cleared');
     } catch (err) {
+      console.error('Error in handleLogout:', err);
       const errorMessage = err.response?.data?.message || 'Failed to logout';
       setError(errorMessage);
       throw new Error(errorMessage);

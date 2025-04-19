@@ -13,51 +13,51 @@ const api = axios.create({
   },
 });
 
-// Add response interceptor for error handling
+// Add response interceptor for token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data || error.message);
-    
     const originalRequest = error.config;
-
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry && !window.location.pathname.includes('/login')) {
-      originalRequest._retry = true;
-
-      try {
-        // Get refresh token from cookie
-        const refreshToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('refreshToken='))
-          ?.split('=')[1];
-
-        if (!refreshToken) {
-          console.error('No refresh token found');
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
-
-        // Try to refresh the token
-        const response = await api.post('/auth/refresh-token', { refreshToken });
-        const { accessToken } = response.data;
-        
-        // Update access token in cookie
-        document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
-        
-        // Retry the original request
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        // Clear tokens and redirect to login
-        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
+    
+    // If error is not 401 or request has already been retried, reject
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    originalRequest._retry = true;
+
+    try {
+      // Get refresh token from cookie
+      const refreshToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('refreshToken='))
+        ?.split('=')[1];
+
+      if (!refreshToken) {
+        console.log('No refresh token found, redirecting to login');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // Try to refresh the token
+      const response = await api.post('/api/auth/refresh-token', { refreshToken });
+      const { accessToken } = response.data;
+
+      // Update access token in cookie
+      document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
+
+      // Retry the original request
+      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+      // Clear tokens and redirect to login
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      window.location.href = '/login';
+      return Promise.reject(refreshError);
+    }
   }
 );
 
@@ -122,6 +122,16 @@ api.interceptors.request.use(
       return config;
     }
 
+    // Get access token from cookie
+    const accessToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('accessToken='))
+      ?.split('=')[1];
+
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
     // Get CSRF token from cookie
     const csrfToken = document.cookie
       .split('; ')
@@ -158,7 +168,7 @@ export const login = async (credentials) => {
     });
     
     // Set both access and refresh tokens
-    const { accessToken, refreshToken } = response.data;
+    const { accessToken, refreshToken, user } = response.data;
     
     // Set access token cookie
     document.cookie = `accessToken=${accessToken}; path=/; secure; sameSite=none; maxAge=3600000`;
@@ -167,7 +177,9 @@ export const login = async (credentials) => {
     document.cookie = `refreshToken=${refreshToken}; path=/; secure; sameSite=none; maxAge=604800000`;
     
     console.log('Login successful, tokens set');
-    return response.data;
+    
+    // Return user data directly from login response
+    return { user, accessToken, refreshToken };
   } catch (error) {
     console.error('Login error:', error);
     throw error.response?.data || { message: 'Login failed' };
