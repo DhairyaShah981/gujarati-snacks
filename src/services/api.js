@@ -229,41 +229,42 @@ export const getProducts = (params = {}) => {
   if (params.sort) queryParams.append('sort', params.sort);
   
   const queryString = queryParams.toString();
-  return api.get(`/products${queryString ? `?${queryString}` : ''}`);
+  return api.get(`/api/products${queryString ? `?${queryString}` : ''}`);
 };
-export const getProduct = (id) => api.get(`/products/${id}`);
+
+export const getProduct = (id) => api.get(`/api/products/${id}`);
 
 // Cart APIs
-export const getCart = () => api.get('/cart');
+export const getCart = () => api.get('/api/cart');
 export const addToCart = (productId, quantity = 1) => 
-  api.post('/cart/add', { productId, quantity });
+  api.post('/api/cart/add', { productId, quantity });
 export const updateCartItem = (productId, quantity) => 
-  api.put('/cart/update', { productId, quantity });
+  api.put('/api/cart/update', { productId, quantity });
 export const removeFromCart = (productId) => 
-  api.delete(`/cart/remove/${productId}`);
-export const clearCart = () => api.delete('/cart/clear');
+  api.delete(`/api/cart/remove/${productId}`);
+export const clearCart = () => api.delete('/api/cart/clear');
 
 // Favorites APIs
-export const getFavorites = () => api.get('/favorites');
+export const getFavorites = () => api.get('/api/favorites');
 export const addToFavorites = (productId) => 
-  api.post('/favorites/add', { productId });
+  api.post('/api/favorites/add', { productId });
 export const removeFromFavorites = (productId) => 
-  api.delete(`/favorites/remove/${productId}`);
+  api.delete(`/api/favorites/remove/${productId}`);
 export const checkFavorite = (productId) => 
-  api.get(`/favorites/check/${productId}`);
+  api.get(`/api/favorites/check/${productId}`);
 
 // Address APIs
-export const getAddresses = () => api.get('/addresses');
-export const addAddress = (address) => api.post('/addresses', address);
-export const updateAddress = (id, address) => api.put(`/addresses/${id}`, address);
-export const deleteAddress = (id) => api.delete(`/addresses/${id}`);
-export const setDefaultAddress = (id) => api.put(`/addresses/${id}/default`);
+export const getAddresses = () => api.get('/api/addresses');
+export const addAddress = (address) => api.post('/api/addresses', address);
+export const updateAddress = (id, address) => api.put(`/api/addresses/${id}`, address);
+export const deleteAddress = (id) => api.delete(`/api/addresses/${id}`);
+export const setDefaultAddress = (id) => api.put(`/api/addresses/${id}/default`);
 
 // Order APIs
-export const createOrder = (orderData) => api.post('/orders', orderData);
-export const getOrders = () => api.get('/orders/myorders');
-export const getOrder = (id) => api.get(`/orders/${id}`);
+export const createOrder = (orderData) => api.post('/api/orders', orderData);
+export const getOrders = () => api.get('/api/orders/myorders');
+export const getOrder = (id) => api.get(`/api/orders/${id}`);
 
-export const updateProfile = (userData) => api.put('/auth/profile', userData);
+export const updateProfile = (userData) => api.put('/api/auth/profile', userData);
 
 export default api; 
