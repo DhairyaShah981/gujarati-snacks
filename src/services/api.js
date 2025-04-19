@@ -220,14 +220,29 @@ export const signup = async (userData) => {
 
 export const logout = async () => {
   try {
-    await api.post('/api/auth/logout');
-    // Clear all tokens
-    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    console.log('Starting logout process');
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
+
+    if (!csrfToken) {
+      console.error('No CSRF token found for logout');
+      throw new Error('CSRF token not found');
+    }
+
+    console.log('Making logout request with CSRF token');
+    const response = await api.post('/api/auth/logout', {}, {
+      headers: {
+        'X-CSRF-Token': csrfToken
+      }
+    });
+    console.log('Logout successful');
+    return response.data;
   } catch (error) {
     console.error('Logout error:', error);
-    throw error.response?.data || { message: 'Logout failed' };
+    throw error.response?.data || { message: 'Failed to logout' };
   }
 };
 

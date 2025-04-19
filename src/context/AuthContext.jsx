@@ -143,7 +143,13 @@ export const AuthProvider = ({ children }) => {
       // Clear all data
       setUser(null);
       localStorage.removeItem('user');
-      console.log('User data cleared');
+      
+      // Clear all cookies
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'XSRF-TOKEN=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      console.log('User data and tokens cleared');
     } catch (err) {
       console.error('Error in handleLogout:', err);
       const errorMessage = err.response?.data?.message || 'Failed to logout';
