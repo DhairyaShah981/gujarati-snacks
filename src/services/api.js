@@ -262,12 +262,12 @@ export const getProduct = (id) => api.get(`/api/products/${id}`);
 // Cart APIs
 export const getCart = () => api.get('/api/cart');
 export const addToCart = (productId, quantity = 1) => 
-  api.post('/api/cart/add', { productId, quantity });
+  api.post('/api/cart', { productId, quantity });
 export const updateCartItem = (productId, quantity) => 
-  api.put('/api/cart/update', { productId, quantity });
+  api.put('/api/cart', { productId, quantity });
 export const removeFromCart = (productId) => 
-  api.delete(`/api/cart/remove/${productId}`);
-export const clearCart = () => api.delete('/api/cart/clear');
+  api.delete(`/api/cart/${productId}`);
+export const clearCart = () => api.delete('/api/cart');
 
 // Favorites APIs
 export const getFavorites = () => api.get('/api/favorites');
@@ -287,7 +287,7 @@ export const setDefaultAddress = (id) => api.put(`/api/addresses/${id}/default`)
 
 // Order APIs
 export const createOrder = (orderData) => api.post('/api/orders', orderData);
-export const getOrders = () => api.get('/api/orders/myorders');
+export const getOrders = () => api.get('/api/orders');
 export const getOrder = (id) => api.get(`/api/orders/${id}`);
 
 export const updateProfile = (userData) => api.put('/api/auth/profile', userData);
