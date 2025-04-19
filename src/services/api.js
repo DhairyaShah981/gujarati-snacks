@@ -205,17 +205,27 @@ export const logout = async () => {
 
 export const getProfile = async () => {
   try {
+    console.log('Fetching user profile');
     const response = await api.get('/api/auth/profile');
+    console.log('Profile API response:', response.data);
+    
     if (!response.data) {
+      console.error('No user data received from profile API');
       throw new Error('No user data received');
     }
+    
+    // Return the user data directly
     return response.data.user || response.data;
   } catch (error) {
     console.error('Get profile error:', error);
     if (error.response?.status === 401) {
+      console.log('Unauthorized - clearing tokens');
       // Clear any existing user data
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
+      // Clear tokens
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       throw new Error('Session expired. Please login again.');
     }
     throw error;

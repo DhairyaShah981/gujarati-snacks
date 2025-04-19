@@ -19,33 +19,84 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
+      console.log('Starting fetchUser');
       const response = await getProfile();
-      const userData = response.data?.user || response.data || null;
-      setUser(userData);
-    } catch (err) {
-      setUser(null);
-    } finally {
-      setLoading(false);
+      console.log('Profile API response:', response);
+      
+      if (response) {
+        console.log('Setting user from profile:', response);
+        setUser(response);
+        localStorage.setItem('user', JSON.stringify(response));
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      if (error.response?.status === 401) {
+        console.log('Unauthorized - clearing user data');
+        setUser(null);
+        localStorage.removeItem('user');
+      }
     }
   };
 
   useEffect(() => {
-    fetchUser();
+    const checkAuth = async () => {
+      try {
+        console.log('Checking authentication status');
+        const storedUser = localStorage.getItem('user');
+        console.log('Stored user:', storedUser);
+        
+        if (storedUser) {
+          console.log('Found stored user, setting in context');
+          setUser(JSON.parse(storedUser));
+          await fetchUser();
+        } else {
+          console.log('No stored user found');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const handleLogin = async (credentials) => {
     try {
+      console.log('Starting handleLogin in AuthContext');
       setError(null);
+      
+      // Call login API
+      console.log('Calling login API with credentials');
       const response = await login(credentials);
-      const userData = response.data?.user || response.data || null;
+      console.log('Login API response:', response);
+      
+      // Extract user data from response
+      const userData = response.user || response.data?.user || response.data || null;
+      console.log('Extracted user data:', userData);
+      
       if (userData) {
+        console.log('Setting user in context:', userData);
         setUser(userData);
+        
+        // Store user data in localStorage
+        console.log('Storing user data in localStorage');
+        localStorage.setItem('user', JSON.stringify(userData));
+        
         // Fetch profile to ensure we have the latest user data
+        console.log('Fetching user profile');
         await fetchUser();
+        
+        console.log('Login process completed successfully');
+        return response;
+      } else {
+        console.error('No user data received in login response');
+        throw new Error('No user data received');
       }
-      return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to login';
+      console.error('Error in handleLogin:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to login';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
