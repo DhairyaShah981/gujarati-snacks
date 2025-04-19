@@ -276,7 +276,7 @@ export const getProduct = (id) => api.get(`/api/products/${id}`);
 // Cart APIs
 export const getCart = () => api.get('/api/cart');
 export const addToCart = (productId, quantity = 1) => 
-  api.post('/api/cart', { productId, quantity });
+  api.post('/api/cart/add', { productId, quantity });
 export const updateCartItem = (productId, quantity) => 
   api.put('/api/cart', { productId, quantity });
 export const removeFromCart = (productId) => 
